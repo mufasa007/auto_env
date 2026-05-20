@@ -134,6 +134,25 @@ void main() {
       );
     });
 
+    test('throws PrivilegeDeniedException on wrong password (-60005)',
+        () async {
+      await hostsFile.writeAsString('');
+      when(() => runner.run(any(), any())).thenAnswer(
+        (_) async => ProcessResult(
+          1,
+          1,
+          '',
+          '0:225: execution error: 管理员用户名或密码不正确。(-60005)',
+        ),
+      );
+
+      await expectLater(
+        writer.applyManagedBlock('# >>> auto_env managed >>>\n'
+            '# <<< auto_env managed <<<\n'),
+        throwsA(isA<PrivilegeDeniedException>()),
+      );
+    });
+
     test('throws HostsWriteFailedException on non-cancel failure', () async {
       await hostsFile.writeAsString('');
       when(() => runner.run(any(), any())).thenAnswer(

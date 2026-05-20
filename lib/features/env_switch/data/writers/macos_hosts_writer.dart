@@ -47,12 +47,8 @@ class MacosHostsWriter implements HostsWriter {
       final result = await processRunner.run('osascript', ['-e', script]);
       if (result.exitCode != 0) {
         final stderr = '${result.stderr}';
-        if (stderr.contains('User canceled') ||
-            stderr.contains('User cancelled') ||
-            stderr.contains('-128')) {
-          throw const PrivilegeDeniedException(
-            'user canceled administrator prompt',
-          );
+        if (_isPrivilegeDenial(stderr)) {
+          throw PrivilegeDeniedException(_describePrivilegeDenial(stderr));
         }
         throw HostsWriteFailedException(
           'osascript exit ${result.exitCode}: $stderr',
@@ -67,5 +63,41 @@ class MacosHostsWriter implements HostsWriter {
         }
       }
     }
+  }
+
+  /// osascript surfaces the underlying OSStatus code in stderr. We treat any
+  /// code in the Security framework's authorization family as a privilege
+  /// denial so the UI can offer Retry instead of a generic write-failed error.
+  ///
+  /// `-128` = user canceled the prompt.
+  /// `-60005` = errAuthorizationFailed (wrong administrator password).
+  /// `-60006` = errAuthorizationDenied (user not authorized).
+  /// `-60007` = errAuthorizationInteractionNotAllowed.
+  /// `-60008` = errAuthorizationInternal.
+  static bool _isPrivilegeDenial(String stderr) {
+    if (stderr.contains('User canceled') ||
+        stderr.contains('User cancelled') ||
+        stderr.contains('-128')) {
+      return true;
+    }
+    return RegExp(r'-6000[0-9]').hasMatch(stderr);
+  }
+
+  static String _describePrivilegeDenial(String stderr) {
+    if (stderr.contains('-60005')) {
+      return 'administrator password was incorrect';
+    }
+    if (stderr.contains('-60006')) {
+      return 'user is not authorized as an administrator';
+    }
+    if (stderr.contains('-60007')) {
+      return 'admin prompt was not allowed (MDM / no GUI?)';
+    }
+    if (stderr.contains('-128') ||
+        stderr.contains('User canceled') ||
+        stderr.contains('User cancelled')) {
+      return 'user canceled administrator prompt';
+    }
+    return 'administrator authorization failed';
   }
 }
