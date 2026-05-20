@@ -1,17 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../env_switch/domain/entities/switch_result.dart';
+import '../../../env_switch/presentation/providers/env_switch_providers.dart';
+import '../../../env_switch/presentation/widgets/post_switch_banner.dart';
+import '../../../env_switch/presentation/widgets/switch_progress_dialog.dart';
 import '../../domain/entities/env_profile.dart';
 import '../providers/env_profile_providers.dart';
 import '../widgets/env_profile_card.dart';
 import 'env_profile_edit_page.dart';
 
-class EnvProfileListPage extends ConsumerWidget {
+class EnvProfileListPage extends ConsumerStatefulWidget {
   const EnvProfileListPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<EnvProfileListPage> createState() => _EnvProfileListPageState();
+}
+
+class _EnvProfileListPageState extends ConsumerState<EnvProfileListPage> {
+  bool _dialogVisible = false;
+  String? _pendingProfileId;
+
+  @override
+  Widget build(BuildContext context) {
+    _listenToSwitch();
+
     final asyncList = ref.watch(envProfileListProvider);
+    final asyncActive = ref.watch(activeProfileSnapshotProvider);
+    final switchState = ref.watch(envSwitchNotifierProvider);
+    final activeId = asyncActive.value?.activeProfileId;
+    final isSwitching = switchState.isLoading;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Environments')),
       body: asyncList.when(
@@ -35,11 +54,16 @@ class EnvProfileListPage extends ConsumerWidget {
             itemCount: profiles.length,
             itemBuilder: (_, i) {
               final profile = profiles[i];
+              final isActive = profile.id == activeId;
               return EnvProfileCard(
                 key: ValueKey(profile.id),
                 profile: profile,
+                isActive: isActive,
+                isSwitching: isSwitching,
                 onEdit: () => _openEditor(context, profile),
                 onDelete: () => _deleteProfile(context, ref, profile),
+                onActivate: () => _activate(profile.id),
+                onRollback: isActive ? _rollback : null,
               );
             },
           );
@@ -50,6 +74,55 @@ class EnvProfileListPage extends ConsumerWidget {
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  void _listenToSwitch() {
+    ref.listen(envSwitchNotifierProvider, (previous, next) {
+      if (next.isLoading || next.hasError) {
+        _showDialog();
+        return;
+      }
+      final result = next.value;
+      if (result != null && previous?.value != result) {
+        _showSuccessBanner(result);
+      }
+    });
+  }
+
+  void _showDialog() {
+    if (_dialogVisible) return;
+    _dialogVisible = true;
+    final pendingId = _pendingProfileId ?? '';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final current = ref.read(envSwitchNotifierProvider);
+      if (!current.isLoading && !current.hasError) {
+        _dialogVisible = false;
+        return;
+      }
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => SwitchProgressDialog(profileId: pendingId),
+      ).whenComplete(() => _dialogVisible = false);
+    });
+  }
+
+  void _showSuccessBanner(SwitchResult result) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentMaterialBanner();
+    messenger.showMaterialBanner(
+      buildPostSwitchBanner(context: context, ref: ref, result: result),
+    );
+  }
+
+  Future<void> _activate(String profileId) async {
+    _pendingProfileId = profileId;
+    await ref.read(envSwitchNotifierProvider.notifier).activate(profileId);
+  }
+
+  Future<void> _rollback() async {
+    await ref.read(envSwitchNotifierProvider.notifier).rollback();
   }
 
   void _openEditor(BuildContext context, EnvProfile? profile) {
