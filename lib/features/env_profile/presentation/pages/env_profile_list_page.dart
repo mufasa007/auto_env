@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../env_switch/domain/entities/switch_progress.dart';
 import '../../../env_switch/domain/entities/switch_result.dart';
 import '../../../env_switch/presentation/providers/env_switch_providers.dart';
 import '../../../env_switch/presentation/widgets/post_switch_banner.dart';
@@ -77,14 +78,43 @@ class _EnvProfileListPageState extends ConsumerState<EnvProfileListPage> {
   }
 
   void _listenToSwitch() {
+    // Errors and success: always react. Errors open the dialog so the user
+    // sees what went wrong; success shows the banner.
     ref.listen(envSwitchNotifierProvider, (previous, next) {
-      if (next.isLoading || next.hasError) {
+      if (next.hasError) {
         _showDialog();
         return;
       }
       final result = next.value;
       if (result != null && previous?.value != result) {
         _showSuccessBanner(result);
+      }
+    });
+
+    // Loading-state UI is driven by stage, not by AsyncLoading itself.
+    //
+    // While stage is requestingPrivilege/writingHosts, the OS-level auth
+    // modal (macOS SecurityAgent / Windows UAC) is the visible UI. Opening
+    // our own modal on top of it steals focus and traps the user looking
+    // at "Switching environment…" while the password prompt sits hidden
+    // underneath — eventually SecurityAgent dismisses on its own and the
+    // switch fails with no chance to type a password.
+    //
+    // We only open the Flutter dialog once stage advances past the
+    // privileged write, which on both platforms means the OS prompt has
+    // already cleared.
+    ref.listen(switchProgressProvider, (previous, next) {
+      if (next == null) return;
+      final notifierState = ref.read(envSwitchNotifierProvider);
+      if (!notifierState.isLoading) return;
+      switch (next.stage) {
+        case SwitchStage.writingEnvVars:
+        case SwitchStage.flushingDns:
+        case SwitchStage.done:
+          _showDialog();
+        case SwitchStage.requestingPrivilege:
+        case SwitchStage.writingHosts:
+          break;
       }
     });
   }

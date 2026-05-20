@@ -125,23 +125,48 @@ void main() {
     expect(find.text('Activate'), findsOneWidget);
   });
 
-  testWidgets('tapping Activate kicks off switch and shows progress dialog',
+  testWidgets('progress dialog opens during envVars stage, not during hosts',
       (tester) async {
-    final completer = Completer<void>();
+    final envCompleter = Completer<void>();
     when(() => profileRepo.list())
         .thenAnswer((_) async => [_profile('pA', name: 'dev')]);
-    when(() => hostsWriter.applyManagedBlock(any()))
-        .thenAnswer((_) => completer.future);
+    when(() => hostsWriter.applyManagedBlock(any())).thenAnswer((_) async {});
+    when(() => envVarWriter.apply(any(), any()))
+        .thenAnswer((_) => envCompleter.future);
 
     await pumpListPage(tester);
 
     await tester.tap(find.byKey(const Key('activate-button')));
     await tester.pump();
     await tester.pump();
+    await tester.pump();
 
     expect(find.text('Switching environment'), findsOneWidget);
 
-    completer.complete();
+    envCompleter.complete();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('progress dialog does NOT open while hosts (osascript) is busy',
+      (tester) async {
+    final hostsCompleter = Completer<void>();
+    when(() => profileRepo.list())
+        .thenAnswer((_) async => [_profile('pA', name: 'dev')]);
+    when(() => hostsWriter.applyManagedBlock(any()))
+        .thenAnswer((_) => hostsCompleter.future);
+
+    await pumpListPage(tester);
+
+    await tester.tap(find.byKey(const Key('activate-button')));
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+
+    // SecurityAgent / UAC owns the screen during this stage — our Flutter
+    // dialog must stay closed so it doesn't steal focus.
+    expect(find.text('Switching environment'), findsNothing);
+
+    hostsCompleter.complete();
     await tester.pumpAndSettle();
   });
 
