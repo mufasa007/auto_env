@@ -52,6 +52,22 @@ add_subdirectory(${FLUTTER_MANAGED_DIR})
 # Application build; see runner/CMakeLists.txt.
 add_subdirectory("runner")
 
+# Privileged-write sidecar. Built alongside the runner so `flutter run` and
+# `flutter build windows` both produce an auto_env_helper.exe next to the app.
+# See windows_helper/main.cpp for the protocol.
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../windows_helper"
+                 "auto_env_helper_build")
+
+add_dependencies(${BINARY_NAME} auto_env_helper)
+
+add_custom_command(TARGET ${BINARY_NAME} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "$<TARGET_FILE:auto_env_helper>"
+    "$<TARGET_FILE_DIR:${BINARY_NAME}>/auto_env_helper.exe"
+  COMMENT "Staging auto_env_helper.exe next to ${BINARY_NAME}.exe"
+  VERBATIM
+)
+
 
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
@@ -73,6 +89,10 @@ set(INSTALL_BUNDLE_DATA_DIR "${CMAKE_INSTALL_PREFIX}/data")
 set(INSTALL_BUNDLE_LIB_DIR "${CMAKE_INSTALL_PREFIX}")
 
 install(TARGETS ${BINARY_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}"
+  COMPONENT Runtime)
+
+install(PROGRAMS "$<TARGET_FILE:auto_env_helper>"
+  DESTINATION "${CMAKE_INSTALL_PREFIX}"
   COMPONENT Runtime)
 
 install(FILES "${FLUTTER_ICU_DATA_FILE}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"

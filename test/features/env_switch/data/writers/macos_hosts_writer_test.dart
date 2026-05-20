@@ -72,7 +72,9 @@ void main() {
         final args = invocation.positionalArguments[1] as List<String>;
         final script = args[1];
         // Extract source temp path between first pair of \" markers.
-        final match = RegExp(r'cp \\"([^\\"]+)\\" \\"([^\\"]+)\\"')
+        // Path char class excludes only the closing quote so Windows hosts can
+        // still run this test (their temp paths contain backslashes).
+        final match = RegExp(r'cp \\"([^"]+)\\" \\"([^"]+)\\"')
             .firstMatch(script)!;
         final src = match.group(1)!;
         final dst = match.group(2)!;
