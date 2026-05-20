@@ -49,19 +49,19 @@ class SwitchProgressDialog extends ConsumerWidget {
             ? [
                 TextButton(
                   key: const Key('switch-error-rollback'),
-                  onPressed: () async {
-                    Navigator.of(context).pop();
-                    await ref
-                        .read(envSwitchNotifierProvider.notifier)
-                        .rollback();
+                  onPressed: () {
+                    // Don't pop — the dialog watches the notifier and will
+                    // rebuild to loading/done UI as rollback progresses, then
+                    // self-pop on success. Popping here races
+                    // _dialogVisible and can swallow the next show.
+                    ref.read(envSwitchNotifierProvider.notifier).rollback();
                   },
                   child: const Text('Rollback'),
                 ),
                 TextButton(
                   key: const Key('switch-error-retry'),
-                  onPressed: () async {
-                    Navigator.of(context).pop();
-                    await ref
+                  onPressed: () {
+                    ref
                         .read(envSwitchNotifierProvider.notifier)
                         .activate(profileId);
                   },
@@ -138,10 +138,25 @@ class _ErrorContent extends StatelessWidget {
 
   static String _friendly(Object error) {
     final name = error.runtimeType.toString();
+    final message = error is Exception ? error.toString() : '$error';
     switch (name) {
       case 'PrivilegeDeniedException':
-        return 'Administrator privilege was denied. '
-            'Retry and approve the prompt to continue.';
+        if (message.contains('password was incorrect')) {
+          return 'The macOS administrator password was wrong. '
+              'Tap Retry and enter the password of an admin user on this '
+              'Mac (the one you use to log in).';
+        }
+        if (message.contains('not authorized')) {
+          return 'This account is not a macOS administrator. '
+              'Switch to an admin user or grant this account admin rights '
+              'in System Settings → Users & Groups.';
+        }
+        if (message.contains('user canceled')) {
+          return 'You canceled the administrator prompt. '
+              'Tap Retry and approve it to continue.';
+        }
+        return 'Administrator authorization failed. '
+            'Tap Retry to see the prompt again.';
       case 'HostsWriteFailedException':
         return 'Could not write to the hosts file.';
       case 'EnvVarWriteFailedException':

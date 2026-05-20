@@ -174,7 +174,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Switch failed'), findsOneWidget);
-    expect(find.textContaining('Administrator privilege'), findsOneWidget);
+    expect(find.textContaining('canceled the administrator'), findsOneWidget);
     expect(find.byKey(const Key('switch-error-retry')), findsOneWidget);
     expect(find.byKey(const Key('switch-error-rollback')), findsOneWidget);
   });
