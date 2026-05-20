@@ -38,3 +38,16 @@ target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 
 # Run the Flutter tool portions of the build. This must not be removed.
 add_dependencies(${BINARY_NAME} flutter_assemble)
+
+# Stage the privileged-write sidecar (defined in ../../windows_helper) next to
+# the runner exe. add_custom_command(TARGET ...) must live in the same
+# directory as the target it attaches to, which is why this lives here rather
+# than at the top level.
+add_dependencies(${BINARY_NAME} auto_env_helper)
+add_custom_command(TARGET ${BINARY_NAME} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "$<TARGET_FILE:auto_env_helper>"
+    "$<TARGET_FILE_DIR:${BINARY_NAME}>/auto_env_helper.exe"
+  COMMENT "Staging auto_env_helper.exe next to ${BINARY_NAME}.exe"
+  VERBATIM
+)

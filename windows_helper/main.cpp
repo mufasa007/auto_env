@@ -21,8 +21,11 @@
 //       the new block. Lines outside the managed block are preserved
 //       byte-for-byte, mirroring lib/features/env_switch/domain/entities/
 //       hosts_managed_block.dart.
-//     - Write the merged content to a staging file next to the target, then
-//       atomically replace via MoveFileExW(REPLACE_EXISTING | WRITE_THROUGH).
+//     - Write the merged content back to hosts in place with permissive
+//       sharing flags. A staging file + MoveFileEx(REPLACE_EXISTING) used to
+//       live here but fails with ERROR_ACCESS_DENIED whenever Windows
+//       Defender, the DNS Client service, or third-party security tools
+//       hold the hosts handle open without FILE_SHARE_DELETE.
 //
 // Exit codes:
 //   0     success
@@ -286,6 +289,14 @@ std::string MergeManagedBlock(const std::string& existing,
 }
 
 int Apply(const std::wstring& payloadPathW) {
+  // Redirect stderr to the log file that the bootstrap parent staged. Elevated
+  // children launched via ShellExecuteEx(verb="runas") run with a fresh hidden
+  // console, so anything written to stderr would otherwise be discarded; the
+  // bootstrap parent reads this log after we exit and forwards it to its own
+  // stderr so the Dart side can surface it.
+  std::wstring logPathW = payloadPathW + L".log";
+  _wfreopen(logPathW.c_str(), L"w", stderr);
+
   std::string payloadJson;
   if (!ReadFileBytes(payloadPathW, payloadJson)) {
     std::fprintf(stderr, "auto_env_helper: cannot read payload (%lu)\n",
@@ -327,19 +338,31 @@ int Apply(const std::wstring& payloadPathW) {
   std::string merged =
       MergeManagedBlock(existing, p.managedBlock, p.markerStart, p.markerEnd);
 
-  std::wstring stagingPath = hostsPathW + L".auto_env_tmp";
-  if (!WriteFileBytes(stagingPath, merged)) {
-    std::fprintf(stderr, "auto_env_helper: cannot write staging (%lu)\n",
-                 GetLastError());
-    DeleteFileW(stagingPath.c_str());
+  // Write hosts in place rather than staging+rename. MoveFileEx(REPLACE_EXISTING)
+  // returns ERROR_ACCESS_DENIED (5) when another process holds the hosts file
+  // open without FILE_SHARE_DELETE — Windows Defender, the DNS Client service,
+  // and many third-party security tools all do this. Opening with permissive
+  // sharing flags + OPEN_EXISTING avoids the rename entirely.
+  HANDLE hOut = CreateFileW(
+      hostsPathW.c_str(), GENERIC_WRITE,
+      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
+      OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+  if (hOut == INVALID_HANDLE_VALUE) {
+    DWORD err = GetLastError();
+    std::fprintf(stderr, "auto_env_helper: open hosts for write failed (%lu)\n",
+                 err);
     return kExitIo;
   }
-
-  if (!MoveFileExW(stagingPath.c_str(), hostsPathW.c_str(),
-                   MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
-    DWORD err = GetLastError();
-    std::fprintf(stderr, "auto_env_helper: MoveFileEx failed (%lu)\n", err);
-    DeleteFileW(stagingPath.c_str());
+  DWORD written = 0;
+  BOOL writeOk = WriteFile(hOut, merged.data(),
+                           static_cast<DWORD>(merged.size()), &written, nullptr);
+  BOOL truncOk = SetEndOfFile(hOut);
+  FlushFileBuffers(hOut);
+  CloseHandle(hOut);
+  if (!writeOk || written != static_cast<DWORD>(merged.size()) || !truncOk) {
+    std::fprintf(stderr,
+                 "auto_env_helper: write hosts failed (wrote %lu/%zu, trunc %d)\n",
+                 written, merged.size(), truncOk);
     return kExitIo;
   }
   return kExitOk;
@@ -411,6 +434,17 @@ int Bootstrap() {
   GetExitCodeProcess(sei.hProcess, &childExit);
   CloseHandle(sei.hProcess);
 
+  // Forward the elevated child's stderr (captured to <tmpPath>.log) so the
+  // Dart side can surface real diagnostics instead of "helper exit 1: ".
+  std::wstring logPath = tmpPath + L".log";
+  if (childExit != 0) {
+    std::string logBytes;
+    if (ReadFileBytes(logPath, logBytes) && !logBytes.empty()) {
+      fwrite(logBytes.data(), 1, logBytes.size(), stderr);
+      fflush(stderr);
+    }
+  }
+  DeleteFileW(logPath.c_str());
   DeleteFileW(tmpPath.c_str());
   return static_cast<int>(childExit);
 }

@@ -49,24 +49,17 @@ endfunction()
 set(FLUTTER_MANAGED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/flutter")
 add_subdirectory(${FLUTTER_MANAGED_DIR})
 
-# Application build; see runner/CMakeLists.txt.
-add_subdirectory("runner")
-
 # Privileged-write sidecar. Built alongside the runner so `flutter run` and
 # `flutter build windows` both produce an auto_env_helper.exe next to the app.
+# Must precede the runner subdirectory so the helper target exists when the
+# runner attaches its POST_BUILD copy step (add_custom_command requires the
+# target to live in the same directory as the rule).
 # See windows_helper/main.cpp for the protocol.
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../windows_helper"
                  "auto_env_helper_build")
 
-add_dependencies(${BINARY_NAME} auto_env_helper)
-
-add_custom_command(TARGET ${BINARY_NAME} POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    "$<TARGET_FILE:auto_env_helper>"
-    "$<TARGET_FILE_DIR:${BINARY_NAME}>/auto_env_helper.exe"
-  COMMENT "Staging auto_env_helper.exe next to ${BINARY_NAME}.exe"
-  VERBATIM
-)
+# Application build; see runner/CMakeLists.txt.
+add_subdirectory("runner")
 
 
 # Generated plugin build rules, which manage building the plugins and adding

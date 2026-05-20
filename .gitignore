@@ -12,6 +12,9 @@
 .swiftpm/
 migrate_working_dir/
 
+# Windows helper CMake build output
+/windows_helper/build/
+
 # IntelliJ related
 *.iml
 *.ipr
