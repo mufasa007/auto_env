@@ -1,0 +1,42 @@
+name: auto_env
+description: "自动切换环境（hosts、环境变量）"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # State management
+  flutter_riverpod: ^2.5.1
+
+  # Immutable models + JSON
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+
+  # Platform paths & ids
+  path_provider: ^2.1.5
+  uuid: ^4.5.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+  # Codegen
+  build_runner: ^2.4.13
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0
+
+  # Test mocks
+  mocktail: ^1.0.4
+
+flutter:
+  uses-material-design: true
