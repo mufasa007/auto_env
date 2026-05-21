@@ -50,7 +50,7 @@ class WindowsEnvVarWriter implements EnvVarWriter {
       ops.join('; '),
       r'} finally { if ($key) { $key.Close() } }',
       "Add-Type -Namespace W -Name N -MemberDefinition '"
-          '[System.Runtime.InteropServices.DllImport(\"user32.dll\",CharSet=System.Runtime.InteropServices.CharSet.Auto)]'
+          '[System.Runtime.InteropServices.DllImport("user32.dll",CharSet=System.Runtime.InteropServices.CharSet.Auto)]'
           'public static extern System.IntPtr SendMessageTimeout(System.IntPtr hWnd, uint Msg, System.UIntPtr wParam, string lParam, uint fuFlags, uint uTimeout, out System.UIntPtr lpdwResult);'
           "'",
       r'$res = [System.UIntPtr]::Zero',

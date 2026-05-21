@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/ui/app_theme.dart';
 import 'features/env_profile/presentation/pages/env_profile_list_page.dart';
 
 void main() {
@@ -12,12 +13,12 @@ class AutoEnvApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.dark();
     return MaterialApp(
       title: 'auto_env',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
+      theme: theme,
+      darkTheme: theme,
+      themeMode: ThemeMode.dark,
       home: const EnvProfileListPage(),
     );
   }

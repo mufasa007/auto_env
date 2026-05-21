@@ -70,9 +70,10 @@ class _EnvProfileListPageState extends ConsumerState<EnvProfileListPage> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openEditor(context, null),
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('New profile'),
       ),
     );
   }

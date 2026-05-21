@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/ui/app_colors.dart';
+import '../../../../core/ui/app_radii.dart';
+import '../../../../core/ui/app_spacing.dart';
+import '../../../../core/ui/app_typography.dart';
 import '../../domain/entities/env_profile.dart';
 
 enum EnvProfileCardAction { edit, delete, rollback }
@@ -20,11 +24,7 @@ class EnvProfileCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
-  /// Whether this profile is currently the active environment.
   final bool isActive;
-
-  /// True while a switch / rollback is in flight anywhere in the app; used to
-  /// disable the Activate button so the user cannot kick off a second switch.
   final bool isSwitching;
 
   final VoidCallback? onActivate;
@@ -32,58 +32,64 @@ class EnvProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      shape: isActive
-          ? RoundedRectangleBorder(
-              side: BorderSide(color: colorScheme.primary, width: 2),
-              borderRadius: BorderRadius.circular(12),
-            )
-          : null,
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.xs,
+      ),
+      color: isActive ? AppColors.surfaceElevated : null,
       child: ListTile(
-        leading: isActive
-            ? Container(
-                key: const Key('active-indicator'),
-                width: 8,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: colorScheme.primary,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              )
-            : const SizedBox(width: 8),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.xs,
+        ),
+        leading: SizedBox(
+          width: 2,
+          height: 40,
+          child: isActive
+              ? Container(
+                  key: const Key('active-indicator'),
+                  decoration: const BoxDecoration(color: AppColors.accent),
+                )
+              : null,
+        ),
         title: Row(
           children: [
-            Flexible(child: Text(profile.name)),
+            Flexible(child: Text(profile.name, style: AppTypography.title)),
             if (isActive) ...[
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Container(
                 key: const Key('active-badge'),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
+                  horizontal: AppSpacing.sm,
                   vertical: 2,
                 ),
                 decoration: BoxDecoration(
-                  color: colorScheme.primary,
-                  borderRadius: BorderRadius.circular(10),
+                  color: AppColors.accent,
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
                 ),
-                child: Text(
+                child: const Text(
                   'ACTIVE',
                   style: TextStyle(
-                    color: colorScheme.onPrimary,
+                    color: Colors.white,
+                    fontFamily: AppTypography.sans,
                     fontSize: 10,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.4,
                   ),
                 ),
               ),
             ],
           ],
         ),
-        subtitle: Text(
-          '${profile.hostsEntries.length} hosts · '
-          '${profile.envVars.length} env vars · '
-          'updated ${_formatTimestamp(profile.updatedAt)}',
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.xs),
+          child: Text(
+            '${profile.hostsEntries.length} hosts · '
+            '${profile.envVars.length} env vars · '
+            'updated ${_formatTimestamp(profile.updatedAt)}',
+            style: AppTypography.caption,
+          ),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
