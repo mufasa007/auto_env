@@ -233,7 +233,7 @@ private enum PrivilegedShellError: Error {
     case .executeFailed(let status):
       return FlutterError(
         code: "EXECUTE_FAILED",
-        message: "AuthorizationExecuteWithPrivileges failed",
+        message: "AuthorizationExecuteWithPrivileges failed (osStatus=\(status))",
         details: ["osStatus": Int(status)]
       )
     }

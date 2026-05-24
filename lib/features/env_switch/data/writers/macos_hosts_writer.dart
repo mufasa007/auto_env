@@ -44,7 +44,9 @@ class MacosHostsWriter implements HostsWriter {
       final script = 'cp "${tmpFile.path}" "$hostsFilePath" && '
           'dscacheutil -flushcache && '
           'killall -HUP mDNSResponder';
-      final result = await elevation.run('sh', ['-c', script]);
+      // /bin/sh as absolute path is required by AuthorizationExecuteWithPrivileges;
+      // OsascriptStrategy accepts it just the same.
+      final result = await elevation.run('/bin/sh', ['-c', script]);
       if (result.exitCode != 0) {
         final stderr = '${result.stderr}';
         if (_isPrivilegeDenial(stderr)) {

@@ -1,17 +1,17 @@
 import 'dart:io';
 
-import 'package:auto_env/core/process/process_runner.dart';
+import 'package:auto_env/core/process/elevation_strategy.dart';
 import 'package:auto_env/features/env_switch/data/writers/macos_hosts_writer.dart';
 import 'package:auto_env/features/env_switch/domain/exceptions.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockProcessRunner extends Mock implements ProcessRunner {}
+class _MockElevationStrategy extends Mock implements ElevationStrategy {}
 
 void main() {
   late Directory tempDir;
   late File hostsFile;
-  late _MockProcessRunner runner;
+  late _MockElevationStrategy elevation;
   late MacosHostsWriter writer;
 
   setUpAll(() {
@@ -21,10 +21,10 @@ void main() {
   setUp(() {
     tempDir = Directory.systemTemp.createTempSync('auto_env_macos_hosts_');
     hostsFile = File('${tempDir.path}/hosts');
-    runner = _MockProcessRunner();
+    elevation = _MockElevationStrategy();
     writer = MacosHostsWriter(
       hostsFilePath: hostsFile.path,
-      processRunner: runner,
+      elevation: elevation,
       tempDirPath: tempDir.path,
     );
   });
@@ -55,42 +55,36 @@ void main() {
   });
 
   group('applyManagedBlock happy path', () {
-    test('writes merged content via osascript with administrator privileges',
+    test('runs the cp + dns flush script through the elevation strategy',
         () async {
       await hostsFile.writeAsString('127.0.0.1 localhost\n');
-      when(() => runner.run(any(), any()))
-          .thenAnswer((_) async => ProcessResult(1, 0, '', ''));
 
-      const newBlock = '# >>> auto_env managed >>>\n'
-          '10.0.0.1 api.local\n'
-          '# <<< auto_env managed <<<\n';
-
-      // Capture the staged temp file path used inside the osascript
-      // command BEFORE the (mocked) osascript runs. To simulate a real
-      // success we intercept the `cp` step by mirroring it ourselves.
-      when(() => runner.run('osascript', any())).thenAnswer((invocation) async {
+      when(() => elevation.run(any(), any())).thenAnswer((invocation) async {
         final args = invocation.positionalArguments[1] as List<String>;
+        // The script is `sh -c '<cmd>'`; extract the cp source/dest and run
+        // the copy ourselves so the resulting hosts file matches what the
+        // real elevated shell would produce.
         final script = args[1];
-        // Extract source temp path between first pair of \" markers.
-        // Path char class excludes only the closing quote so Windows hosts can
-        // still run this test (their temp paths contain backslashes).
-        final match = RegExp(r'cp \\"([^"]+)\\" \\"([^"]+)\\"')
-            .firstMatch(script)!;
+        final match =
+            RegExp(r'cp "([^"]+)" "([^"]+)"').firstMatch(script)!;
         final src = match.group(1)!;
         final dst = match.group(2)!;
         await File(dst).writeAsString(await File(src).readAsString());
         return ProcessResult(1, 0, '', '');
       });
 
+      const newBlock = '# >>> auto_env managed >>>\n'
+          '10.0.0.1 api.local\n'
+          '# <<< auto_env managed <<<\n';
       await writer.applyManagedBlock(newBlock);
 
-      final captured = verify(() => runner.run('osascript', captureAny()))
-          .captured
-          .single as List<String>;
-      expect(captured[0], '-e');
-      expect(captured[1], contains('with administrator privileges'));
-      expect(captured[1], contains('dscacheutil -flushcache'));
-      expect(captured[1], contains('killall -HUP mDNSResponder'));
+      final captured =
+          verify(() => elevation.run(captureAny(), captureAny())).captured;
+      expect(captured[0], '/bin/sh');
+      final args = captured[1] as List<String>;
+      expect(args[0], '-c');
+      expect(args[1], contains('dscacheutil -flushcache'));
+      expect(args[1], contains('killall -HUP mDNSResponder'));
 
       final hostsContent = await hostsFile.readAsString();
       expect(hostsContent, '127.0.0.1 localhost\n$newBlock');
@@ -98,11 +92,8 @@ void main() {
 
     test('cleans up the temp file after success', () async {
       await hostsFile.writeAsString('');
-      when(() => runner.run(any(), any())).thenAnswer((invocation) async {
-        // Simulate cp running but do not bother copying — we only care about
-        // tmp cleanup, hosts content is asserted elsewhere.
-        return ProcessResult(1, 0, '', '');
-      });
+      when(() => elevation.run(any(), any()))
+          .thenAnswer((_) async => ProcessResult(1, 0, '', ''));
 
       await writer.applyManagedBlock(
         '# >>> auto_env managed >>>\n# <<< auto_env managed <<<\n',
@@ -117,10 +108,10 @@ void main() {
   });
 
   group('applyManagedBlock errors', () {
-    test('throws PrivilegeDeniedException when user cancels osascript',
+    test('throws PrivilegeDeniedException when stderr signals user cancel',
         () async {
       await hostsFile.writeAsString('');
-      when(() => runner.run(any(), any())).thenAnswer(
+      when(() => elevation.run(any(), any())).thenAnswer(
         (_) async => ProcessResult(
           1,
           1,
@@ -139,7 +130,7 @@ void main() {
     test('throws PrivilegeDeniedException on wrong password (-60005)',
         () async {
       await hostsFile.writeAsString('');
-      when(() => runner.run(any(), any())).thenAnswer(
+      when(() => elevation.run(any(), any())).thenAnswer(
         (_) async => ProcessResult(
           1,
           1,
@@ -157,7 +148,7 @@ void main() {
 
     test('throws HostsWriteFailedException on non-cancel failure', () async {
       await hostsFile.writeAsString('');
-      when(() => runner.run(any(), any())).thenAnswer(
+      when(() => elevation.run(any(), any())).thenAnswer(
         (_) async => ProcessResult(1, 1, '', 'cp: permission denied'),
       );
 
@@ -165,6 +156,20 @@ void main() {
         writer.applyManagedBlock('# >>> auto_env managed >>>\n'
             '# <<< auto_env managed <<<\n'),
         throwsA(isA<HostsWriteFailedException>()),
+      );
+    });
+
+    test('AuthorizationRevokedException from strategy is rethrown as-is',
+        () async {
+      await hostsFile.writeAsString('');
+      when(() => elevation.run(any(), any())).thenThrow(
+        const AuthorizationRevokedException('session revoked'),
+      );
+
+      await expectLater(
+        writer.applyManagedBlock('# >>> auto_env managed >>>\n'
+            '# <<< auto_env managed <<<\n'),
+        throwsA(isA<AuthorizationRevokedException>()),
       );
     });
   });

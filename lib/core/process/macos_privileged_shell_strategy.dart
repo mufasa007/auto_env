@@ -66,8 +66,10 @@ class MacosPrivilegedShellStrategy implements ElevationStrategy {
             'macOS authorization session was revoked',
           );
         default:
+          final osStatus = e.details is Map ? (e.details as Map)['osStatus'] : null;
           throw HostsWriteFailedException(
-            'PrivilegedShell failed (${e.code}): ${e.message}',
+            'PrivilegedShell failed (${e.code}'
+            '${osStatus != null ? ', osStatus=$osStatus' : ''}): ${e.message}',
           );
       }
     }
