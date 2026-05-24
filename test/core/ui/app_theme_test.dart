@@ -19,11 +19,11 @@ void main() {
     });
   });
 
-  group('AppRadii token values', () {
+  group('AppRadii token values (iOS HIG, M3)', () {
     test('field/card/modal/pill radii', () {
-      expect(AppRadii.field, 6);
-      expect(AppRadii.card, 8);
-      expect(AppRadii.modal, 10);
+      expect(AppRadii.field, 10);
+      expect(AppRadii.card, 12);
+      expect(AppRadii.modal, 16);
       expect(AppRadii.pill, 999);
     });
   });
@@ -37,15 +37,17 @@ void main() {
     });
   });
 
-  group('AppColors palette', () {
-    test('core palette is the Raycast-style dark set', () {
-      expect(AppColors.bg, const Color(0xFF1A1A1B));
-      expect(AppColors.surface, const Color(0xFF1B1B1F));
-      expect(AppColors.surfaceElevated, const Color(0xFF222226));
-      expect(AppColors.border, const Color(0xFF2A2A2E));
-      expect(AppColors.accent, const Color(0xFFFF6363));
-      expect(AppColors.textPrimary, const Color(0xFFF2F2F4));
-      expect(AppColors.textSecondary, const Color(0xFF9A9AA0));
+  group('AppColors palette (iOS HIG, M3)', () {
+    test('core palette matches Apple systemColors Light values', () {
+      expect(AppColors.bg, const Color(0xFFF2F2F7));
+      expect(AppColors.surface, const Color(0xFFFFFFFF));
+      expect(AppColors.surfaceElevated, const Color(0xFFF9F9FB));
+      expect(AppColors.border, const Color(0xFFE5E5EA));
+      expect(AppColors.accent, const Color(0xFF007AFF));
+      expect(AppColors.textPrimary, const Color(0xFF1C1C1E));
+      expect(AppColors.textSecondary, const Color(0xFF6C6C70));
+      expect(AppColors.error, const Color(0xFFFF3B30));
+      expect(AppColors.success, const Color(0xFF34C759));
     });
   });
 
@@ -63,7 +65,7 @@ void main() {
       expect(AppTypography.mono.fontFamilyFallback, contains('Cascadia Code'));
     });
 
-    test('font sizes and weights match Raycast scale', () {
+    test('font sizes and weights', () {
       expect(AppTypography.title.fontSize, 15);
       expect(AppTypography.title.fontWeight, FontWeight.w600);
       expect(AppTypography.body.fontSize, 13);
@@ -74,11 +76,11 @@ void main() {
     });
   });
 
-  group('AppTheme.dark()', () {
-    final theme = AppTheme.dark();
+  group('AppTheme.light()', () {
+    final theme = AppTheme.light();
 
-    test('is dark mode', () {
-      expect(theme.brightness, Brightness.dark);
+    test('is light mode', () {
+      expect(theme.brightness, Brightness.light);
       expect(theme.useMaterial3, isTrue);
     });
 
@@ -86,25 +88,34 @@ void main() {
       expect(theme.scaffoldBackgroundColor, AppColors.bg);
     });
 
-    test('color scheme primary is the accent token', () {
+    test('color scheme primary is the iOS blue accent', () {
       expect(theme.colorScheme.primary, AppColors.accent);
       expect(theme.colorScheme.error, AppColors.error);
+      expect(theme.colorScheme.surface, AppColors.surface);
     });
 
     test('default font family is Inter', () {
       expect(theme.textTheme.bodyMedium?.fontFamily, 'Inter');
     });
 
-    test('card theme uses border token', () {
+    test('card theme uses card radius + subtle shadow', () {
       final cardShape = theme.cardTheme.shape! as RoundedRectangleBorder;
-      expect(cardShape.side.color, AppColors.border);
-      expect(theme.cardTheme.elevation, 0);
+      final radius = cardShape.borderRadius as BorderRadius;
+      expect(radius.topLeft.x, AppRadii.card);
+      expect(theme.cardTheme.shadowColor, AppColors.shadow);
+      expect(theme.cardTheme.elevation, 1);
     });
 
     test('dialog theme uses the modal radius', () {
       final dialogShape = theme.dialogTheme.shape! as RoundedRectangleBorder;
       final radius = dialogShape.borderRadius as BorderRadius;
       expect(radius.topLeft.x, AppRadii.modal);
+    });
+
+    test('AppShadows extension is registered for cards', () {
+      final shadows = theme.extension<AppShadows>();
+      expect(shadows, isNotNull);
+      expect(shadows!.card, isNotEmpty);
     });
   });
 }

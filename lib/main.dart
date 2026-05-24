@@ -13,12 +13,11 @@ class AutoEnvApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.dark();
+    final theme = AppTheme.light();
     return MaterialApp(
       title: 'auto_env',
       theme: theme,
-      darkTheme: theme,
-      themeMode: ThemeMode.dark,
+      themeMode: ThemeMode.light,
       home: const EnvProfileListPage(),
     );
   }

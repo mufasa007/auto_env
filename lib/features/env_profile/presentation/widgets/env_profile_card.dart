@@ -65,13 +65,13 @@ class EnvProfileCard extends StatelessWidget {
                   vertical: 2,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.accent,
+                  color: AppColors.accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(AppRadii.pill),
                 ),
                 child: const Text(
                   'ACTIVE',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.accent,
                     fontFamily: AppTypography.sans,
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
