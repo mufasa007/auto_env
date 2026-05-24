@@ -14,6 +14,10 @@ abstract class AppPaths {
   /// the most recent switch attempt, used for rollback.
   Future<File> lastSwitchStateFile();
 
+  /// `<appSupportDir>/auto_env/settings.json` — app-wide user preferences
+  /// (themeMode, locale, closeAction).
+  Future<File> appSettingsFile();
+
   /// `~/.config/auto_env/env.sh` on macOS, `null` elsewhere.
   /// Users source this from their shell rc to make env vars visible to shells.
   Future<File?> userEnvShellFile();
@@ -47,6 +51,12 @@ class DefaultAppPaths implements AppPaths {
   Future<File> lastSwitchStateFile() async {
     final dir = await _autoEnvDir();
     return File('${dir.path}/last_state.json');
+  }
+
+  @override
+  Future<File> appSettingsFile() async {
+    final dir = await _autoEnvDir();
+    return File('${dir.path}/settings.json');
   }
 
   @override

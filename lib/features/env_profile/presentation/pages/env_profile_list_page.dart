@@ -6,6 +6,7 @@ import '../../../env_switch/domain/entities/switch_result.dart';
 import '../../../env_switch/presentation/providers/env_switch_providers.dart';
 import '../../../env_switch/presentation/widgets/post_switch_banner.dart';
 import '../../../env_switch/presentation/widgets/switch_progress_dialog.dart';
+import '../../../app_settings/presentation/pages/settings_page.dart';
 import '../../domain/entities/env_profile.dart';
 import '../providers/env_profile_providers.dart';
 import '../widgets/env_profile_card.dart';
@@ -33,7 +34,17 @@ class _EnvProfileListPageState extends ConsumerState<EnvProfileListPage> {
     final isSwitching = switchState.isLoading;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Environments')),
+      appBar: AppBar(
+        title: const Text('Environments'),
+        actions: [
+          IconButton(
+            key: const Key('open-settings'),
+            tooltip: 'Settings',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => _openSettings(context),
+          ),
+        ],
+      ),
       body: asyncList.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(
@@ -160,6 +171,14 @@ class _EnvProfileListPageState extends ConsumerState<EnvProfileListPage> {
     Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (_) => EnvProfileEditPage(profile: profile),
+      ),
+    );
+  }
+
+  void _openSettings(BuildContext context) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => const SettingsPage(),
       ),
     );
   }
