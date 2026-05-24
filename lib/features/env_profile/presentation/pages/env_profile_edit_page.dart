@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/ui/app_colors.dart';
+import '../../../../core/ui/app_radii.dart';
+import '../../../../core/ui/app_spacing.dart';
+import '../../../../core/ui/app_typography.dart';
 import '../../domain/entities/env_profile.dart';
 import '../../domain/entities/hosts_entry.dart';
 import '../providers/env_profile_providers.dart';
@@ -89,58 +93,108 @@ class _EnvProfileEditPageState extends ConsumerState<EnvProfileEditPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isNew ? 'New profile' : 'Edit profile'),
-        actions: [
-          if (_saving)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Center(
-                child: SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
+        toolbarHeight: 48,
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.lg,
+                AppSpacing.lg,
+                AppSpacing.sm,
               ),
-            )
-          else
-            TextButton(
-              key: const Key('save-button'),
-              onPressed: _save,
-              child: const Text('Save'),
+              children: [
+                TextField(
+                  key: const Key('name-field'),
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Name',
+                    errorText: _nameError,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                _SectionLabel('Hosts entries'),
+                const SizedBox(height: AppSpacing.sm),
+                HostsEntryEditor(
+                  entries: _hostsEntries,
+                  onChanged: (next) => setState(() => _hostsEntries = next),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                _SectionLabel('Environment variables'),
+                const SizedBox(height: AppSpacing.sm),
+                EnvVarEditor(
+                  entries: _envVars,
+                  onChanged: (next) => setState(() => _envVars = next),
+                ),
+              ],
             ),
+          ),
+          Container(
+            decoration: const BoxDecoration(
+              color: AppColors.bg,
+              border: Border(
+                top: BorderSide(color: AppColors.border),
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.md,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                OutlinedButton(
+                  key: const Key('cancel-button'),
+                  onPressed: _saving ? null : () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                _saving
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg,
+                          vertical: AppSpacing.sm,
+                        ),
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : ElevatedButton(
+                        key: const Key('save-button'),
+                        onPressed: _save,
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(AppRadii.field),
+                          ),
+                        ),
+                        child: const Text('Save'),
+                      ),
+              ],
+            ),
+          ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          TextField(
-            key: const Key('name-field'),
-            controller: _nameController,
-            decoration: InputDecoration(
-              labelText: 'Name',
-              errorText: _nameError,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Hosts entries',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          HostsEntryEditor(
-            entries: _hostsEntries,
-            onChanged: (next) => setState(() => _hostsEntries = next),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Environment variables',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          EnvVarEditor(
-            entries: _envVars,
-            onChanged: (next) => setState(() => _envVars = next),
-          ),
-        ],
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text.toUpperCase(),
+      style: AppTypography.caption.copyWith(
+        letterSpacing: 0.6,
+        color: AppColors.textSecondary,
       ),
     );
   }

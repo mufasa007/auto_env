@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/ui/app_colors.dart';
+import '../../../../core/ui/app_radii.dart';
+import '../../../../core/ui/app_spacing.dart';
+import '../../../../core/ui/app_typography.dart';
 import '../../domain/entities/switch_result.dart';
 import '../providers/env_switch_providers.dart';
 
@@ -13,11 +17,33 @@ MaterialBanner buildPostSwitchBanner({
 }) {
   final seconds = (result.elapsed.inMilliseconds / 1000).toStringAsFixed(2);
   return MaterialBanner(
+    backgroundColor: AppColors.surfaceElevated,
+    elevation: 0,
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.lg,
+      vertical: AppSpacing.sm,
+    ),
+    leadingPadding: const EdgeInsets.only(right: AppSpacing.md),
+    dividerColor: AppColors.border,
     content: Text(
       'Switched in ${seconds}s · running processes need a restart to '
       'see new environment variables.',
+      style: AppTypography.body,
     ),
-    leading: const Icon(Icons.check_circle_outline),
+    leading: Container(
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        color: AppColors.success.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+      ),
+      alignment: Alignment.center,
+      child: const Icon(
+        Icons.check_rounded,
+        size: 16,
+        color: AppColors.success,
+      ),
+    ),
     actions: [
       TextButton(
         key: const Key('post-switch-rollback'),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/ui/app_colors.dart';
+import '../../../../core/ui/app_spacing.dart';
 import '../../domain/entities/hosts_entry.dart';
 
 class HostsEntryEditor extends StatelessWidget {
@@ -42,13 +44,21 @@ class HostsEntryEditor extends StatelessWidget {
             onChanged: (next) => _updateAt(i, next),
             onRemove: () => _removeAt(i),
           ),
+        const SizedBox(height: AppSpacing.xs),
         Align(
           alignment: Alignment.centerLeft,
           child: TextButton.icon(
             key: const Key('hosts-add-button'),
             onPressed: _addRow,
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.add, size: 16),
             label: const Text('Add host entry'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textSecondary,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.xs,
+              ),
+            ),
           ),
         ),
       ],
@@ -90,38 +100,48 @@ class _HostsRowState extends State<_HostsRow> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             flex: 2,
             child: TextField(
               controller: _ip,
-              decoration: const InputDecoration(labelText: 'IP'),
+              decoration: const InputDecoration(
+                labelText: 'IP',
+                isDense: true,
+              ),
               onChanged: (v) =>
                   widget.onChanged(widget.entry.copyWith(ip: v)),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             flex: 3,
             child: TextField(
               controller: _host,
-              decoration: const InputDecoration(labelText: 'Hostname'),
+              decoration: const InputDecoration(
+                labelText: 'Hostname',
+                isDense: true,
+              ),
               onChanged: (v) =>
                   widget.onChanged(widget.entry.copyWith(hostname: v)),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           Switch(
             value: widget.entry.enabled,
             onChanged: (v) =>
                 widget.onChanged(widget.entry.copyWith(enabled: v)),
+            activeThumbColor: AppColors.accent,
           ),
           IconButton(
             tooltip: 'Remove',
             onPressed: widget.onRemove,
-            icon: const Icon(Icons.close),
+            icon: const Icon(Icons.close, size: 16),
+            color: AppColors.textSecondary,
+            visualDensity: VisualDensity.compact,
           ),
         ],
       ),

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/ui/app_colors.dart';
+import '../../../../core/ui/app_radii.dart';
+import '../../../../core/ui/app_spacing.dart';
+import '../../../../core/ui/app_typography.dart';
 import '../../domain/entities/switch_progress.dart';
 import '../providers/env_switch_providers.dart';
 
@@ -18,6 +22,13 @@ class SwitchProgressDialog extends ConsumerWidget {
 
   /// id of the profile the user just tried to activate; used to retry.
   final String profileId;
+
+  static const _stages = <SwitchStage>[
+    SwitchStage.requestingPrivilege,
+    SwitchStage.writingHosts,
+    SwitchStage.writingEnvVars,
+    SwitchStage.flushingDns,
+  ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -40,40 +51,70 @@ class SwitchProgressDialog extends ConsumerWidget {
 
     return PopScope(
       canPop: !state.isLoading,
-      child: AlertDialog(
-        title: Text(state.hasError ? 'Switch failed' : 'Switching environment'),
-        content: state.hasError
-            ? _ErrorContent(error: state.error!)
-            : _LoadingContent(progress: progress),
-        actions: state.hasError
-            ? [
-                TextButton(
-                  key: const Key('switch-error-rollback'),
-                  onPressed: () {
-                    // Don't pop — the dialog watches the notifier and will
-                    // rebuild to loading/done UI as rollback progresses, then
-                    // self-pop on success. Popping here races
-                    // _dialogVisible and can swallow the next show.
-                    ref.read(envSwitchNotifierProvider.notifier).rollback();
-                  },
-                  child: const Text('Rollback'),
+      child: Dialog(
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.modal),
+          side: const BorderSide(color: AppColors.border),
+        ),
+        child: SizedBox(
+          width: 480,
+          height: 260,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  state.hasError
+                      ? 'Switch failed'
+                      : 'Switching environment',
+                  style: AppTypography.title,
                 ),
-                TextButton(
-                  key: const Key('switch-error-retry'),
-                  onPressed: () {
-                    ref
-                        .read(envSwitchNotifierProvider.notifier)
-                        .activate(profileId);
-                  },
-                  child: const Text('Retry'),
+                const SizedBox(height: AppSpacing.lg),
+                Expanded(
+                  child: state.hasError
+                      ? _ErrorContent(error: state.error!)
+                      : _LoadingContent(progress: progress),
                 ),
-                TextButton(
-                  key: const Key('switch-error-dismiss'),
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Dismiss'),
-                ),
-              ]
-            : null,
+                if (state.hasError) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        key: const Key('switch-error-dismiss'),
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Dismiss'),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      OutlinedButton(
+                        key: const Key('switch-error-rollback'),
+                        onPressed: () {
+                          ref
+                              .read(envSwitchNotifierProvider.notifier)
+                              .rollback();
+                        },
+                        child: const Text('Rollback'),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      ElevatedButton(
+                        key: const Key('switch-error-retry'),
+                        onPressed: () {
+                          ref
+                              .read(envSwitchNotifierProvider.notifier)
+                              .activate(profileId);
+                        },
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -87,14 +128,32 @@ class _LoadingContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stage = progress?.stage ?? SwitchStage.requestingPrivilege;
-    final percent = progress?.percent ?? 0;
+    final activeIndex = SwitchProgressDialog._stages.indexOf(stage);
     return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(_labelFor(stage)),
-        const SizedBox(height: 16),
-        LinearProgressIndicator(value: percent == 0 ? null : percent),
+        Row(
+          children: [
+            for (var i = 0; i < SwitchProgressDialog._stages.length; i++) ...[
+              if (i != 0) const SizedBox(width: AppSpacing.xs),
+              Expanded(
+                child: _StageBar(
+                  state: i < activeIndex || stage == SwitchStage.done
+                      ? _StageBarState.done
+                      : i == activeIndex
+                          ? _StageBarState.active
+                          : _StageBarState.pending,
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          _labelFor(stage),
+          style: AppTypography.body.copyWith(color: AppColors.textSecondary),
+        ),
       ],
     );
   }
@@ -115,6 +174,30 @@ class _LoadingContent extends StatelessWidget {
   }
 }
 
+enum _StageBarState { pending, active, done }
+
+class _StageBar extends StatelessWidget {
+  const _StageBar({required this.state});
+
+  final _StageBarState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (state) {
+      _StageBarState.done => AppColors.accent,
+      _StageBarState.active => AppColors.accent.withValues(alpha: 0.7),
+      _StageBarState.pending => AppColors.border,
+    };
+    return Container(
+      height: 3,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+      ),
+    );
+  }
+}
+
 class _ErrorContent extends StatelessWidget {
   const _ErrorContent({required this.error});
 
@@ -126,11 +209,14 @@ class _ErrorContent extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(_friendly(error)),
-        const SizedBox(height: 8),
+        Text(
+          _friendly(error),
+          style: AppTypography.body,
+        ),
+        const SizedBox(height: AppSpacing.sm),
         Text(
           '$error',
-          style: Theme.of(context).textTheme.bodySmall,
+          style: AppTypography.caption,
         ),
       ],
     );

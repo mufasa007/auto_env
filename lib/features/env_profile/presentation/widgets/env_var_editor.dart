@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/ui/app_colors.dart';
+import '../../../../core/ui/app_spacing.dart';
+
 typedef EnvVarRow = ({String key, String value});
 
 class EnvVarEditor extends StatelessWidget {
@@ -39,13 +42,21 @@ class EnvVarEditor extends StatelessWidget {
             onChanged: (next) => _updateAt(i, next),
             onRemove: () => _removeAt(i),
           ),
+        const SizedBox(height: AppSpacing.xs),
         Align(
           alignment: Alignment.centerLeft,
           child: TextButton.icon(
             key: const Key('env-add-button'),
             onPressed: _addRow,
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.add, size: 16),
             label: const Text('Add variable'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textSecondary,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.xs,
+              ),
+            ),
           ),
         ),
       ],
@@ -87,24 +98,31 @@ class _VarRowState extends State<_VarRow> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             flex: 2,
             child: TextField(
               controller: _key,
-              decoration: const InputDecoration(labelText: 'Key'),
+              decoration: const InputDecoration(
+                labelText: 'Key',
+                isDense: true,
+              ),
               onChanged: (v) =>
                   widget.onChanged((key: v, value: widget.entry.value)),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             flex: 3,
             child: TextField(
               controller: _value,
-              decoration: const InputDecoration(labelText: 'Value'),
+              decoration: const InputDecoration(
+                labelText: 'Value',
+                isDense: true,
+              ),
               onChanged: (v) =>
                   widget.onChanged((key: widget.entry.key, value: v)),
             ),
@@ -112,7 +130,9 @@ class _VarRowState extends State<_VarRow> {
           IconButton(
             tooltip: 'Remove',
             onPressed: widget.onRemove,
-            icon: const Icon(Icons.close),
+            icon: const Icon(Icons.close, size: 16),
+            color: AppColors.textSecondary,
+            visualDensity: VisualDensity.compact,
           ),
         ],
       ),
