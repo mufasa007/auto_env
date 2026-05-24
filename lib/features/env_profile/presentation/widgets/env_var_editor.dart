@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/ui/app_colors.dart';
 import '../../../../core/ui/app_spacing.dart';
+import '../../../../core/ui/app_typography.dart';
+import '../../domain/exceptions/text_parse_exception.dart';
+import '../../domain/services/env_var_text_codec.dart';
 
 typedef EnvVarRow = ({String key, String value});
 
-class EnvVarEditor extends StatelessWidget {
+enum _Mode { rows, text }
+
+class EnvVarEditor extends StatefulWidget {
   const EnvVarEditor({
     super.key,
     required this.entries,
@@ -15,19 +20,54 @@ class EnvVarEditor extends StatelessWidget {
   final List<EnvVarRow> entries;
   final ValueChanged<List<EnvVarRow>> onChanged;
 
+  @override
+  State<EnvVarEditor> createState() => _EnvVarEditorState();
+}
+
+class _EnvVarEditorState extends State<EnvVarEditor> {
+  _Mode _mode = _Mode.rows;
+  late final TextEditingController _text =
+      TextEditingController(text: EnvVarTextCodec.serialize(widget.entries));
+  EnvVarTextParseException? _parseError;
+
+  @override
+  void dispose() {
+    _text.dispose();
+    super.dispose();
+  }
+
   void _updateAt(int i, EnvVarRow next) {
-    final list = [...entries];
+    final list = [...widget.entries];
     list[i] = next;
-    onChanged(list);
+    widget.onChanged(list);
   }
 
   void _removeAt(int i) {
-    final list = [...entries]..removeAt(i);
-    onChanged(list);
+    final list = [...widget.entries]..removeAt(i);
+    widget.onChanged(list);
   }
 
   void _addRow() {
-    onChanged([...entries, (key: '', value: '')]);
+    widget.onChanged([...widget.entries, (key: '', value: '')]);
+  }
+
+  void _switchMode(_Mode next) {
+    if (next == _mode) return;
+    if (next == _Mode.text) {
+      _text.text = EnvVarTextCodec.serialize(widget.entries);
+      _parseError = null;
+    }
+    setState(() => _mode = next);
+  }
+
+  void _onTextChanged(String raw) {
+    try {
+      final parsed = EnvVarTextCodec.parse(raw);
+      setState(() => _parseError = null);
+      widget.onChanged(parsed);
+    } on EnvVarTextParseException catch (e) {
+      setState(() => _parseError = e);
+    }
   }
 
   @override
@@ -35,10 +75,36 @@ class EnvVarEditor extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (var i = 0; i < entries.length; i++)
+        Align(
+          alignment: Alignment.centerRight,
+          child: SegmentedButton<_Mode>(
+            key: const Key('env-mode-toggle'),
+            segments: const [
+              ButtonSegment(value: _Mode.rows, label: Text('Rows')),
+              ButtonSegment(value: _Mode.text, label: Text('Text')),
+            ],
+            selected: {_mode},
+            onSelectionChanged: (s) => _switchMode(s.first),
+            showSelectedIcon: false,
+            style: const ButtonStyle(
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        if (_mode == _Mode.rows) _buildRows() else _buildText(),
+      ],
+    );
+  }
+
+  Widget _buildRows() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < widget.entries.length; i++)
           _VarRow(
             key: ValueKey('env-row-$i'),
-            entry: entries[i],
+            entry: widget.entries[i],
             onChanged: (next) => _updateAt(i, next),
             onRemove: () => _removeAt(i),
           ),
@@ -59,6 +125,35 @@ class EnvVarEditor extends StatelessWidget {
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildText() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          key: const Key('env-text-field'),
+          controller: _text,
+          onChanged: _onTextChanged,
+          maxLines: null,
+          minLines: 6,
+          style: AppTypography.mono,
+          decoration: InputDecoration(
+            hintText: 'API_BASE=https://api.dev\n# DEBUG=true',
+            hintStyle:
+                AppTypography.mono.copyWith(color: AppColors.textSecondary),
+            isDense: true,
+          ),
+        ),
+        if (_parseError != null) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Line ${_parseError!.lineNumber}: ${_parseError!.reason}',
+            style: AppTypography.caption.copyWith(color: AppColors.error),
+          ),
+        ],
       ],
     );
   }
