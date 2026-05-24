@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/ui/app_colors.dart';
 import '../../../../core/ui/app_spacing.dart';
 import '../../../../core/ui/app_typography.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/exceptions/text_parse_exception.dart';
 import '../../domain/services/env_var_text_codec.dart';
 
@@ -72,6 +73,7 @@ class _EnvVarEditorState extends State<EnvVarEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -79,9 +81,9 @@ class _EnvVarEditorState extends State<EnvVarEditor> {
           alignment: Alignment.centerRight,
           child: SegmentedButton<_Mode>(
             key: const Key('env-mode-toggle'),
-            segments: const [
-              ButtonSegment(value: _Mode.rows, label: Text('Rows')),
-              ButtonSegment(value: _Mode.text, label: Text('Text')),
+            segments: [
+              ButtonSegment(value: _Mode.rows, label: Text(l10n.modeRows)),
+              ButtonSegment(value: _Mode.text, label: Text(l10n.modeText)),
             ],
             selected: {_mode},
             onSelectionChanged: (s) => _switchMode(s.first),
@@ -92,12 +94,12 @@ class _EnvVarEditorState extends State<EnvVarEditor> {
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        if (_mode == _Mode.rows) _buildRows() else _buildText(),
+        if (_mode == _Mode.rows) _buildRows(l10n) else _buildText(l10n),
       ],
     );
   }
 
-  Widget _buildRows() {
+  Widget _buildRows(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -115,7 +117,7 @@ class _EnvVarEditorState extends State<EnvVarEditor> {
             key: const Key('env-add-button'),
             onPressed: _addRow,
             icon: const Icon(Icons.add, size: 16),
-            label: const Text('Add variable'),
+            label: Text(l10n.addVariable),
             style: TextButton.styleFrom(
               foregroundColor: AppColors.textSecondary,
               padding: const EdgeInsets.symmetric(
@@ -129,7 +131,7 @@ class _EnvVarEditorState extends State<EnvVarEditor> {
     );
   }
 
-  Widget _buildText() {
+  Widget _buildText(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -150,7 +152,10 @@ class _EnvVarEditorState extends State<EnvVarEditor> {
         if (_parseError != null) ...[
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Line ${_parseError!.lineNumber}: ${_parseError!.reason}',
+            l10n.parseLineError(
+              _parseError!.lineNumber,
+              _parseError!.reason,
+            ),
             style: AppTypography.caption.copyWith(color: AppColors.error),
           ),
         ],
@@ -192,6 +197,7 @@ class _VarRowState extends State<_VarRow> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
@@ -201,8 +207,8 @@ class _VarRowState extends State<_VarRow> {
             flex: 2,
             child: TextField(
               controller: _key,
-              decoration: const InputDecoration(
-                labelText: 'Key',
+              decoration: InputDecoration(
+                labelText: l10n.fieldKey,
                 isDense: true,
               ),
               onChanged: (v) =>
@@ -214,8 +220,8 @@ class _VarRowState extends State<_VarRow> {
             flex: 3,
             child: TextField(
               controller: _value,
-              decoration: const InputDecoration(
-                labelText: 'Value',
+              decoration: InputDecoration(
+                labelText: l10n.fieldValue,
                 isDense: true,
               ),
               onChanged: (v) =>
@@ -223,7 +229,7 @@ class _VarRowState extends State<_VarRow> {
             ),
           ),
           IconButton(
-            tooltip: 'Remove',
+            tooltip: l10n.remove,
             onPressed: widget.onRemove,
             icon: const Icon(Icons.close, size: 16),
             color: AppColors.textSecondary,

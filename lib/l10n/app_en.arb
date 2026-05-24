@@ -1,0 +1,117 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "auto_env",
+
+  "listPageTitle": "Environments",
+  "listEmpty": "No profiles yet. Tap + to create one.",
+  "listLoadError": "Failed to load profiles:\n{error}",
+  "@listLoadError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "listFab": "New profile",
+  "settingsTooltip": "Settings",
+
+  "deleteDialogTitle": "Delete profile?",
+  "deleteDialogBody": "Delete \"{name}\"? This cannot be undone.",
+  "@deleteDialogBody": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "cancel": "Cancel",
+  "delete": "Delete",
+
+  "cardActive": "ACTIVE",
+  "cardSummary": "{hosts} hosts · {envs} env vars · updated {updated}",
+  "@cardSummary": {
+    "placeholders": {
+      "hosts": {"type": "int"},
+      "envs": {"type": "int"},
+      "updated": {"type": "String"}
+    }
+  },
+  "actionActive": "Active",
+  "actionActivate": "Activate",
+  "actionRollback": "Rollback",
+  "actionEdit": "Edit",
+  "actionDelete": "Delete",
+
+  "editTitleNew": "New profile",
+  "editTitleEdit": "Edit profile",
+  "fieldName": "Name",
+  "errorNameEmpty": "Name cannot be empty",
+  "sectionHosts": "Hosts entries",
+  "sectionEnvVars": "Environment variables",
+  "save": "Save",
+
+  "fieldIp": "IP",
+  "fieldHostname": "Hostname",
+  "addHostEntry": "Add host entry",
+  "fieldKey": "Key",
+  "fieldValue": "Value",
+  "addVariable": "Add variable",
+  "remove": "Remove",
+  "modeRows": "Rows",
+  "modeText": "Text",
+  "parseLineError": "Line {line}: {reason}",
+  "@parseLineError": {
+    "placeholders": {
+      "line": {"type": "int"},
+      "reason": {"type": "String"}
+    }
+  },
+
+  "switchTitleRunning": "Switching environment",
+  "switchTitleFailed": "Switch failed",
+  "stageRequestingPrivilege": "Requesting administrator privilege…",
+  "stageWritingHosts": "Writing hosts file…",
+  "stageWritingEnvVars": "Updating environment variables…",
+  "stageFlushingDns": "Flushing DNS cache…",
+  "stageDone": "Done",
+  "dismiss": "Dismiss",
+  "retry": "Retry",
+
+  "switchedInBanner": "Switched in {seconds}s · running processes need a restart to see new environment variables.",
+  "@switchedInBanner": {
+    "placeholders": {
+      "seconds": {"type": "String"}
+    }
+  },
+
+  "errorPrivilegePasswordWrong": "The macOS administrator password was wrong. Tap Retry and enter the password of an admin user on this Mac (the one you use to log in).",
+  "errorPrivilegeNotAdmin": "This account is not a macOS administrator. Switch to an admin user or grant this account admin rights in System Settings → Users & Groups.",
+  "errorPrivilegeUserCanceled": "You canceled the administrator prompt. Tap Retry and approve it to continue.",
+  "errorPrivilegeGeneric": "Administrator authorization failed. Tap Retry to see the prompt again.",
+  "errorHostsWrite": "Could not write to the hosts file.",
+  "errorEnvVarWrite": "Could not update environment variables.",
+  "errorDnsFlush": "DNS cache flush failed.",
+  "errorPartial": "The switch partially completed. Consider rolling back.",
+  "errorSwitchGeneric": "The switch could not be completed.",
+
+  "settingsTitle": "Settings",
+  "settingsSectionWindow": "Window",
+  "closeActionHideToTrayLabel": "Hide to tray",
+  "closeActionHideToTrayDesc": "Closing the window keeps auto_env running in the menu bar / system tray. Quit from the tray menu.",
+  "closeActionQuitLabel": "Quit",
+  "closeActionQuitDesc": "Closing the window quits auto_env (original macOS / Windows behavior).",
+  "settingsSectionLanguage": "Language",
+  "languageLabel": "Language",
+  "localeSystem": "System",
+  "localeFollowSystem": "Follow system",
+  "localeChinese": "中文",
+  "localeEnglish": "English",
+
+  "trayNoActive": "No active profile",
+  "trayActive": "Active: {name}",
+  "@trayActive": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "trayNoProfilesHint": "No profiles — create one in the app",
+  "trayShowWindow": "Show window",
+  "trayQuit": "Quit"
+}

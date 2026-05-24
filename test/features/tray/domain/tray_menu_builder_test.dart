@@ -1,5 +1,7 @@
 import 'package:auto_env/features/env_profile/domain/entities/env_profile.dart';
 import 'package:auto_env/features/tray/domain/tray_menu_builder.dart';
+import 'package:auto_env/l10n/app_localizations.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 EnvProfile _profile(String id, String name) => EnvProfile(
@@ -12,10 +14,20 @@ EnvProfile _profile(String id, String name) => EnvProfile(
     );
 
 void main() {
+  late AppLocalizations l10n;
+
+  setUpAll(() async {
+    l10n = await AppLocalizations.delegate.load(const Locale('en'));
+  });
+
   group('buildTrayMenu', () {
     test('empty profile list shows the no-profiles hint + only quit/show',
         () {
-      final items = buildTrayMenu(profiles: const [], activeProfileId: null);
+      final items = buildTrayMenu(
+        profiles: const [],
+        activeProfileId: null,
+        l10n: l10n,
+      );
 
       // header + status + sep + hint + sep + show + quit  = 7 entries
       expect(items.length, 7);
@@ -35,6 +47,7 @@ void main() {
       final items = buildTrayMenu(
         profiles: [_profile('p1', 'dev'), _profile('p2', 'staging')],
         activeProfileId: null,
+        l10n: l10n,
       );
 
       final activateItems = items.where((i) => i.type == 'checkbox').toList();
@@ -51,6 +64,7 @@ void main() {
       final items = buildTrayMenu(
         profiles: [_profile('p1', 'dev'), _profile('p2', 'staging')],
         activeProfileId: 'p2',
+        l10n: l10n,
       );
 
       expect(items[1].label, 'Active: staging');
@@ -66,10 +80,8 @@ void main() {
       final items = buildTrayMenu(
         profiles: [_profile('p1', 'dev')],
         activeProfileId: 'ghost-id',
+        l10n: l10n,
       );
-      // Status falls back to "No active profile"; rollback is still offered
-      // because the persisted active id is non-null even if the profile
-      // was deleted.
       expect(items[1].label, 'No active profile');
       expect(items.where((i) => i.key == 'rollback'), hasLength(1));
     });
@@ -78,9 +90,22 @@ void main() {
       final items = buildTrayMenu(
         profiles: [_profile('p1', 'dev')],
         activeProfileId: 'p1',
+        l10n: l10n,
       );
       final seps = items.where((i) => i.type == 'separator').toList();
       expect(seps.length, 2);
+    });
+
+    test('zh locale produces translated labels', () async {
+      final zh = await AppLocalizations.delegate.load(const Locale('zh'));
+      final items = buildTrayMenu(
+        profiles: [_profile('p1', 'dev')],
+        activeProfileId: 'p1',
+        l10n: zh,
+      );
+      expect(items[1].label, '已生效：dev');
+      expect(items.where((i) => i.key == 'show').single.label, '显示窗口');
+      expect(items.where((i) => i.key == 'quit').single.label, '退出');
     });
   });
 
@@ -105,12 +130,10 @@ void main() {
 
     test('exported MenuItem keys all round-trip through parseTrayMenuKey',
         () {
-      // Defensive check: every key we put into the tray menu must be
-      // parseable back to an action, otherwise a click would silently
-      // no-op.
       final items = buildTrayMenu(
         profiles: [_profile('p1', 'dev')],
         activeProfileId: 'p1',
+        l10n: l10n,
       );
       for (final item in items) {
         if (item.disabled || item.type == 'separator') continue;

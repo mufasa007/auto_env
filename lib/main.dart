@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/ui/app_theme.dart';
@@ -7,6 +8,7 @@ import 'features/env_profile/presentation/pages/env_profile_list_page.dart';
 import 'features/env_profile/presentation/providers/env_profile_providers.dart';
 import 'features/env_switch/presentation/providers/env_switch_providers.dart';
 import 'features/tray/presentation/tray_controller.dart';
+import 'l10n/app_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,6 +43,13 @@ class AutoEnvApp extends ConsumerWidget {
       theme: AppTheme.light(),
       themeMode: toFlutterThemeMode(settings.themeMode),
       locale: toFlutterLocale(settings.locale),
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
       home: const EnvProfileListPage(),
     );
   }

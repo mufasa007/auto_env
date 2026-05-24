@@ -6,6 +6,7 @@ import '../../../../core/ui/app_colors.dart';
 import '../../../../core/ui/app_radii.dart';
 import '../../../../core/ui/app_spacing.dart';
 import '../../../../core/ui/app_typography.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/env_profile.dart';
 import '../../domain/entities/hosts_entry.dart';
 import '../providers/env_profile_providers.dart';
@@ -52,9 +53,10 @@ class _EnvProfileEditPageState extends ConsumerState<EnvProfileEditPage> {
   }
 
   Future<void> _save() async {
+    final l10n = AppLocalizations.of(context)!;
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      setState(() => _nameError = 'Name cannot be empty');
+      setState(() => _nameError = l10n.errorNameEmpty);
       return;
     }
     setState(() {
@@ -90,9 +92,10 @@ class _EnvProfileEditPageState extends ConsumerState<EnvProfileEditPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isNew ? 'New profile' : 'Edit profile'),
+        title: Text(_isNew ? l10n.editTitleNew : l10n.editTitleEdit),
         toolbarHeight: 48,
       ),
       body: Column(
@@ -110,19 +113,19 @@ class _EnvProfileEditPageState extends ConsumerState<EnvProfileEditPage> {
                   key: const Key('name-field'),
                   controller: _nameController,
                   decoration: InputDecoration(
-                    labelText: 'Name',
+                    labelText: l10n.fieldName,
                     errorText: _nameError,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xl),
-                _SectionLabel('Hosts entries'),
+                _SectionLabel(l10n.sectionHosts),
                 const SizedBox(height: AppSpacing.sm),
                 HostsEntryEditor(
                   entries: _hostsEntries,
                   onChanged: (next) => setState(() => _hostsEntries = next),
                 ),
                 const SizedBox(height: AppSpacing.xl),
-                _SectionLabel('Environment variables'),
+                _SectionLabel(l10n.sectionEnvVars),
                 const SizedBox(height: AppSpacing.sm),
                 EnvVarEditor(
                   entries: _envVars,
@@ -148,7 +151,7 @@ class _EnvProfileEditPageState extends ConsumerState<EnvProfileEditPage> {
                 OutlinedButton(
                   key: const Key('cancel-button'),
                   onPressed: _saving ? null : () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
+                  child: Text(l10n.cancel),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 _saving
@@ -172,7 +175,7 @@ class _EnvProfileEditPageState extends ConsumerState<EnvProfileEditPage> {
                                 BorderRadius.circular(AppRadii.field),
                           ),
                         ),
-                        child: const Text('Save'),
+                        child: Text(l10n.save),
                       ),
               ],
             ),

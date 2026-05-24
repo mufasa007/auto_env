@@ -6,6 +6,7 @@ import '../../../env_switch/domain/entities/switch_result.dart';
 import '../../../env_switch/presentation/providers/env_switch_providers.dart';
 import '../../../env_switch/presentation/widgets/post_switch_banner.dart';
 import '../../../env_switch/presentation/widgets/switch_progress_dialog.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../app_settings/presentation/pages/settings_page.dart';
 import '../../domain/entities/env_profile.dart';
 import '../providers/env_profile_providers.dart';
@@ -27,6 +28,7 @@ class _EnvProfileListPageState extends ConsumerState<EnvProfileListPage> {
   Widget build(BuildContext context) {
     _listenToSwitch();
 
+    final l10n = AppLocalizations.of(context)!;
     final asyncList = ref.watch(envProfileListProvider);
     final asyncActive = ref.watch(activeProfileSnapshotProvider);
     final switchState = ref.watch(envSwitchNotifierProvider);
@@ -35,11 +37,11 @@ class _EnvProfileListPageState extends ConsumerState<EnvProfileListPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Environments'),
+        title: Text(l10n.listPageTitle),
         actions: [
           IconButton(
             key: const Key('open-settings'),
-            tooltip: 'Settings',
+            tooltip: l10n.settingsTooltip,
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => _openSettings(context),
           ),
@@ -51,15 +53,15 @@ class _EnvProfileListPageState extends ConsumerState<EnvProfileListPage> {
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
-              'Failed to load profiles:\n$err',
+              l10n.listLoadError(err.toString()),
               textAlign: TextAlign.center,
             ),
           ),
         ),
         data: (profiles) {
           if (profiles.isEmpty) {
-            return const Center(
-              child: Text('No profiles yet. Tap + to create one.'),
+            return Center(
+              child: Text(l10n.listEmpty),
             );
           }
           return ListView.builder(
@@ -84,7 +86,7 @@ class _EnvProfileListPageState extends ConsumerState<EnvProfileListPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openEditor(context, null),
         icon: const Icon(Icons.add),
-        label: const Text('New profile'),
+        label: Text(l10n.listFab),
       ),
     );
   }
@@ -188,23 +190,22 @@ class _EnvProfileListPageState extends ConsumerState<EnvProfileListPage> {
     WidgetRef ref,
     EnvProfile profile,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete profile?'),
-        content: Text(
-          'Delete "${profile.name}"? This cannot be undone.',
-        ),
+        title: Text(l10n.deleteDialogTitle),
+        content: Text(l10n.deleteDialogBody(profile.name)),
         actions: [
           TextButton(
             key: const Key('delete-cancel'),
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             key: const Key('delete-confirm'),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),

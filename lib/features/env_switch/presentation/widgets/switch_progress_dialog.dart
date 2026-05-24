@@ -5,6 +5,7 @@ import '../../../../core/ui/app_colors.dart';
 import '../../../../core/ui/app_radii.dart';
 import '../../../../core/ui/app_spacing.dart';
 import '../../../../core/ui/app_typography.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/switch_progress.dart';
 import '../providers/env_switch_providers.dart';
 
@@ -68,8 +69,8 @@ class SwitchProgressDialog extends ConsumerWidget {
               children: [
                 Text(
                   state.hasError
-                      ? 'Switch failed'
-                      : 'Switching environment',
+                      ? AppLocalizations.of(context)!.switchTitleFailed
+                      : AppLocalizations.of(context)!.switchTitleRunning,
                   style: AppTypography.title,
                 ),
                 const SizedBox(height: AppSpacing.lg),
@@ -86,7 +87,7 @@ class SwitchProgressDialog extends ConsumerWidget {
                       TextButton(
                         key: const Key('switch-error-dismiss'),
                         onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Dismiss'),
+                        child: Text(AppLocalizations.of(context)!.dismiss),
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       OutlinedButton(
@@ -96,7 +97,8 @@ class SwitchProgressDialog extends ConsumerWidget {
                               .read(envSwitchNotifierProvider.notifier)
                               .rollback();
                         },
-                        child: const Text('Rollback'),
+                        child:
+                            Text(AppLocalizations.of(context)!.actionRollback),
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       ElevatedButton(
@@ -106,7 +108,7 @@ class SwitchProgressDialog extends ConsumerWidget {
                               .read(envSwitchNotifierProvider.notifier)
                               .activate(profileId);
                         },
-                        child: const Text('Retry'),
+                        child: Text(AppLocalizations.of(context)!.retry),
                       ),
                     ],
                   ),
@@ -151,25 +153,26 @@ class _LoadingContent extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         Text(
-          _labelFor(stage),
+          _labelFor(context, stage),
           style: AppTypography.body.copyWith(color: AppColors.textSecondary),
         ),
       ],
     );
   }
 
-  static String _labelFor(SwitchStage stage) {
+  static String _labelFor(BuildContext context, SwitchStage stage) {
+    final l10n = AppLocalizations.of(context)!;
     switch (stage) {
       case SwitchStage.requestingPrivilege:
-        return 'Requesting administrator privilege…';
+        return l10n.stageRequestingPrivilege;
       case SwitchStage.writingHosts:
-        return 'Writing hosts file…';
+        return l10n.stageWritingHosts;
       case SwitchStage.writingEnvVars:
-        return 'Updating environment variables…';
+        return l10n.stageWritingEnvVars;
       case SwitchStage.flushingDns:
-        return 'Flushing DNS cache…';
+        return l10n.stageFlushingDns;
       case SwitchStage.done:
-        return 'Done';
+        return l10n.stageDone;
     }
   }
 }
@@ -210,7 +213,7 @@ class _ErrorContent extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          _friendly(error),
+          _friendly(context, error),
           style: AppTypography.body,
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -222,37 +225,32 @@ class _ErrorContent extends StatelessWidget {
     );
   }
 
-  static String _friendly(Object error) {
+  static String _friendly(BuildContext context, Object error) {
+    final l10n = AppLocalizations.of(context)!;
     final name = error.runtimeType.toString();
     final message = error is Exception ? error.toString() : '$error';
     switch (name) {
       case 'PrivilegeDeniedException':
         if (message.contains('password was incorrect')) {
-          return 'The macOS administrator password was wrong. '
-              'Tap Retry and enter the password of an admin user on this '
-              'Mac (the one you use to log in).';
+          return l10n.errorPrivilegePasswordWrong;
         }
         if (message.contains('not authorized')) {
-          return 'This account is not a macOS administrator. '
-              'Switch to an admin user or grant this account admin rights '
-              'in System Settings → Users & Groups.';
+          return l10n.errorPrivilegeNotAdmin;
         }
         if (message.contains('user canceled')) {
-          return 'You canceled the administrator prompt. '
-              'Tap Retry and approve it to continue.';
+          return l10n.errorPrivilegeUserCanceled;
         }
-        return 'Administrator authorization failed. '
-            'Tap Retry to see the prompt again.';
+        return l10n.errorPrivilegeGeneric;
       case 'HostsWriteFailedException':
-        return 'Could not write to the hosts file.';
+        return l10n.errorHostsWrite;
       case 'EnvVarWriteFailedException':
-        return 'Could not update environment variables.';
+        return l10n.errorEnvVarWrite;
       case 'DnsFlushFailedException':
-        return 'DNS cache flush failed.';
+        return l10n.errorDnsFlush;
       case 'PartialFailureException':
-        return 'The switch partially completed. Consider rolling back.';
+        return l10n.errorPartial;
       default:
-        return 'The switch could not be completed.';
+        return l10n.errorSwitchGeneric;
     }
   }
 }

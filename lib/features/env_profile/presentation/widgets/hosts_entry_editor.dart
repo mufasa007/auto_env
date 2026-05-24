@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/ui/app_colors.dart';
 import '../../../../core/ui/app_spacing.dart';
 import '../../../../core/ui/app_typography.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/hosts_entry.dart';
 import '../../domain/exceptions/text_parse_exception.dart';
 import '../../domain/services/hosts_text_codec.dart';
@@ -74,6 +75,7 @@ class _HostsEntryEditorState extends State<HostsEntryEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -81,9 +83,9 @@ class _HostsEntryEditorState extends State<HostsEntryEditor> {
           alignment: Alignment.centerRight,
           child: SegmentedButton<_Mode>(
             key: const Key('hosts-mode-toggle'),
-            segments: const [
-              ButtonSegment(value: _Mode.rows, label: Text('Rows')),
-              ButtonSegment(value: _Mode.text, label: Text('Text')),
+            segments: [
+              ButtonSegment(value: _Mode.rows, label: Text(l10n.modeRows)),
+              ButtonSegment(value: _Mode.text, label: Text(l10n.modeText)),
             ],
             selected: {_mode},
             onSelectionChanged: (s) => _switchMode(s.first),
@@ -94,12 +96,12 @@ class _HostsEntryEditorState extends State<HostsEntryEditor> {
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        if (_mode == _Mode.rows) _buildRows() else _buildText(),
+        if (_mode == _Mode.rows) _buildRows(l10n) else _buildText(l10n),
       ],
     );
   }
 
-  Widget _buildRows() {
+  Widget _buildRows(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -117,7 +119,7 @@ class _HostsEntryEditorState extends State<HostsEntryEditor> {
             key: const Key('hosts-add-button'),
             onPressed: _addRow,
             icon: const Icon(Icons.add, size: 16),
-            label: const Text('Add host entry'),
+            label: Text(l10n.addHostEntry),
             style: TextButton.styleFrom(
               foregroundColor: AppColors.textSecondary,
               padding: const EdgeInsets.symmetric(
@@ -131,7 +133,7 @@ class _HostsEntryEditorState extends State<HostsEntryEditor> {
     );
   }
 
-  Widget _buildText() {
+  Widget _buildText(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -153,7 +155,10 @@ class _HostsEntryEditorState extends State<HostsEntryEditor> {
         if (_parseError != null) ...[
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Line ${_parseError!.lineNumber}: ${_parseError!.reason}',
+            l10n.parseLineError(
+              _parseError!.lineNumber,
+              _parseError!.reason,
+            ),
             style: AppTypography.caption.copyWith(color: AppColors.error),
           ),
         ],
@@ -195,6 +200,7 @@ class _HostsRowState extends State<_HostsRow> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
@@ -204,8 +210,8 @@ class _HostsRowState extends State<_HostsRow> {
             flex: 2,
             child: TextField(
               controller: _ip,
-              decoration: const InputDecoration(
-                labelText: 'IP',
+              decoration: InputDecoration(
+                labelText: l10n.fieldIp,
                 isDense: true,
               ),
               onChanged: (v) =>
@@ -217,8 +223,8 @@ class _HostsRowState extends State<_HostsRow> {
             flex: 3,
             child: TextField(
               controller: _host,
-              decoration: const InputDecoration(
-                labelText: 'Hostname',
+              decoration: InputDecoration(
+                labelText: l10n.fieldHostname,
                 isDense: true,
               ),
               onChanged: (v) =>
@@ -233,7 +239,7 @@ class _HostsRowState extends State<_HostsRow> {
             activeThumbColor: AppColors.accent,
           ),
           IconButton(
-            tooltip: 'Remove',
+            tooltip: l10n.remove,
             onPressed: widget.onRemove,
             icon: const Icon(Icons.close, size: 16),
             color: AppColors.textSecondary,

@@ -1,5 +1,6 @@
 import 'package:auto_env/features/env_profile/domain/entities/hosts_entry.dart';
 import 'package:auto_env/features/env_profile/presentation/widgets/hosts_entry_editor.dart';
+import 'package:auto_env/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -10,6 +11,9 @@ Future<void> _pump(
 }) async {
   await tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: const Locale('en'),
       home: Scaffold(
         body: SingleChildScrollView(
           child: Padding(

@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../app_settings/domain/entities/app_settings.dart';
 import '../../app_settings/presentation/providers/app_settings_providers.dart';
 import '../../env_profile/presentation/providers/env_profile_providers.dart';
@@ -24,6 +26,7 @@ class TrayController with TrayListener, WindowListener {
   final ProviderContainer _container;
   ProviderSubscription<dynamic>? _profilesSub;
   ProviderSubscription<dynamic>? _activeSub;
+  ProviderSubscription<dynamic>? _settingsSub;
   bool _disposed = false;
 
   static const String _iconPath = 'assets/tray/icon.png';
@@ -48,6 +51,10 @@ class TrayController with TrayListener, WindowListener {
       activeProfileSnapshotProvider,
       (_, _) => _rebuildMenu(),
     );
+    _settingsSub = _container.listen<dynamic>(
+      appSettingsNotifierProvider,
+      (_, _) => _rebuildMenu(),
+    );
 
     await _rebuildMenu();
   }
@@ -58,11 +65,33 @@ class TrayController with TrayListener, WindowListener {
         _container.read(envProfileListProvider).value ?? const [];
     final activeId =
         _container.read(activeProfileSnapshotProvider).value?.activeProfileId;
+    final l10n = await _loadLocalizations();
     final items = buildTrayMenu(
       profiles: profiles,
       activeProfileId: activeId,
+      l10n: l10n,
     );
     await trayManager.setContextMenu(Menu(items: items));
+  }
+
+  /// Resolves an [AppLocalizations] for the user's current locale choice
+  /// (explicit override in settings, or platform default when null).
+  Future<AppLocalizations> _loadLocalizations() async {
+    final settings =
+        _container.read(appSettingsNotifierProvider).value ??
+            const AppSettings();
+    final explicit = settings.locale;
+    Locale target;
+    if (explicit != null && explicit.isNotEmpty) {
+      target = Locale(explicit);
+    } else {
+      final system = PlatformDispatcher.instance.locale;
+      target = AppLocalizations.supportedLocales.firstWhere(
+        (l) => l.languageCode == system.languageCode,
+        orElse: () => const Locale('en'),
+      );
+    }
+    return AppLocalizations.delegate.load(target);
   }
 
   @override
@@ -129,6 +158,7 @@ class TrayController with TrayListener, WindowListener {
     _disposed = true;
     _profilesSub?.close();
     _activeSub?.close();
+    _settingsSub?.close();
     trayManager.removeListener(this);
     windowManager.removeListener(this);
     try {

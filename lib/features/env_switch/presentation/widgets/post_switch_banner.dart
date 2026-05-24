@@ -5,6 +5,7 @@ import '../../../../core/ui/app_colors.dart';
 import '../../../../core/ui/app_radii.dart';
 import '../../../../core/ui/app_spacing.dart';
 import '../../../../core/ui/app_typography.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/switch_result.dart';
 import '../providers/env_switch_providers.dart';
 
@@ -15,6 +16,7 @@ MaterialBanner buildPostSwitchBanner({
   required WidgetRef ref,
   required SwitchResult result,
 }) {
+  final l10n = AppLocalizations.of(context)!;
   final seconds = (result.elapsed.inMilliseconds / 1000).toStringAsFixed(2);
   return MaterialBanner(
     backgroundColor: AppColors.surfaceElevated,
@@ -26,8 +28,7 @@ MaterialBanner buildPostSwitchBanner({
     leadingPadding: const EdgeInsets.only(right: AppSpacing.md),
     dividerColor: AppColors.border,
     content: Text(
-      'Switched in ${seconds}s · running processes need a restart to '
-      'see new environment variables.',
+      l10n.switchedInBanner(seconds),
       style: AppTypography.body,
     ),
     leading: Container(
@@ -51,13 +52,13 @@ MaterialBanner buildPostSwitchBanner({
           ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
           await ref.read(envSwitchNotifierProvider.notifier).rollback();
         },
-        child: const Text('Rollback'),
+        child: Text(l10n.actionRollback),
       ),
       TextButton(
         key: const Key('post-switch-dismiss'),
         onPressed: () =>
             ScaffoldMessenger.of(context).hideCurrentMaterialBanner(),
-        child: const Text('Dismiss'),
+        child: Text(l10n.dismiss),
       ),
     ],
   );

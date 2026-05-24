@@ -3,6 +3,7 @@ import 'package:auto_env/features/env_profile/domain/entities/env_profile.dart';
 import 'package:auto_env/features/env_profile/domain/entities/hosts_entry.dart';
 import 'package:auto_env/features/env_profile/presentation/pages/env_profile_edit_page.dart';
 import 'package:auto_env/features/env_profile/presentation/providers/env_profile_providers.dart';
+import 'package:auto_env/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -31,7 +32,12 @@ Future<void> _pump(
       overrides: [
         envProfileRepositoryProvider.overrideWith((ref) async => repo),
       ],
-      child: MaterialApp(home: EnvProfileEditPage(profile: profile)),
+      child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        home: EnvProfileEditPage(profile: profile),
+      ),
     ),
   );
   await tester.pumpAndSettle();

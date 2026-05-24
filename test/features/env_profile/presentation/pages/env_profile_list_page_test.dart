@@ -7,6 +7,7 @@ import 'package:auto_env/features/env_profile/presentation/pages/env_profile_edi
 import 'package:auto_env/features/env_profile/presentation/pages/env_profile_list_page.dart';
 import 'package:auto_env/features/env_profile/presentation/providers/env_profile_providers.dart';
 import 'package:auto_env/features/env_profile/presentation/widgets/env_profile_card.dart';
+import 'package:auto_env/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -38,7 +39,12 @@ Future<void> _pumpListPage(
       overrides: [
         envProfileRepositoryProvider.overrideWith((ref) async => repo),
       ],
-      child: const MaterialApp(home: EnvProfileListPage()),
+      child: const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: Locale('en'),
+        home: EnvProfileListPage(),
+      ),
     ),
   );
 }

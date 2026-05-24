@@ -13,6 +13,7 @@ import 'package:auto_env/features/env_switch/data/writers/hosts_writer.dart';
 import 'package:auto_env/features/env_switch/domain/entities/active_profile_snapshot.dart';
 import 'package:auto_env/features/env_switch/domain/entities/last_switch_state.dart';
 import 'package:auto_env/features/env_switch/domain/exceptions.dart';
+import 'package:auto_env/l10n/app_localizations.dart';
 import 'package:auto_env/features/env_switch/presentation/providers/env_switch_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -100,7 +101,12 @@ void main() {
           activeProfileRepositoryProvider
               .overrideWith((_) async => activeRepo),
         ],
-        child: const MaterialApp(home: EnvProfileListPage()),
+        child: const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: Locale('en'),
+          home: EnvProfileListPage(),
+        ),
       ),
     );
     await tester.pumpAndSettle();

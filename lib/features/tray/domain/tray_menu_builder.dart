@@ -1,5 +1,6 @@
 import 'package:tray_manager/tray_manager.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../env_profile/domain/entities/env_profile.dart';
 
 /// Pure-function tray menu builder. Extracted so it can be unit-tested
@@ -19,6 +20,7 @@ import '../../env_profile/domain/entities/env_profile.dart';
 List<MenuItem> buildTrayMenu({
   required List<EnvProfile> profiles,
   required String? activeProfileId,
+  required AppLocalizations l10n,
 }) {
   final activeProfile = activeProfileId == null
       ? null
@@ -28,11 +30,11 @@ List<MenuItem> buildTrayMenu({
           );
 
   return <MenuItem>[
-    MenuItem(label: 'auto_env', disabled: true),
+    MenuItem(label: l10n.appTitle, disabled: true),
     MenuItem(
       label: activeProfile == null
-          ? 'No active profile'
-          : 'Active: ${activeProfile.name}',
+          ? l10n.trayNoActive
+          : l10n.trayActive(activeProfile.name),
       disabled: true,
     ),
     MenuItem.separator(),
@@ -43,15 +45,12 @@ List<MenuItem> buildTrayMenu({
         checked: p.id == activeProfileId,
       ),
     if (profiles.isEmpty)
-      MenuItem(
-        label: 'No profiles — create one in the app',
-        disabled: true,
-      ),
+      MenuItem(label: l10n.trayNoProfilesHint, disabled: true),
     MenuItem.separator(),
-    MenuItem(key: 'show', label: 'Show window'),
+    MenuItem(key: 'show', label: l10n.trayShowWindow),
     if (activeProfileId != null)
-      MenuItem(key: 'rollback', label: 'Rollback'),
-    MenuItem(key: 'quit', label: 'Quit'),
+      MenuItem(key: 'rollback', label: l10n.actionRollback),
+    MenuItem(key: 'quit', label: l10n.trayQuit),
   ];
 }
 

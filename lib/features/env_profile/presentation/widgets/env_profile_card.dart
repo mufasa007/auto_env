@@ -4,6 +4,7 @@ import '../../../../core/ui/app_colors.dart';
 import '../../../../core/ui/app_radii.dart';
 import '../../../../core/ui/app_spacing.dart';
 import '../../../../core/ui/app_typography.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/env_profile.dart';
 
 enum EnvProfileCardAction { edit, delete, rollback }
@@ -32,6 +33,7 @@ class EnvProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       margin: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
@@ -68,9 +70,9 @@ class EnvProfileCard extends StatelessWidget {
                   color: AppColors.accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(AppRadii.pill),
                 ),
-                child: const Text(
-                  'ACTIVE',
-                  style: TextStyle(
+                child: Text(
+                  l10n.cardActive,
+                  style: const TextStyle(
                     color: AppColors.accent,
                     fontFamily: AppTypography.sans,
                     fontSize: 10,
@@ -85,9 +87,11 @@ class EnvProfileCard extends StatelessWidget {
         subtitle: Padding(
           padding: const EdgeInsets.only(top: AppSpacing.xs),
           child: Text(
-            '${profile.hostsEntries.length} hosts · '
-            '${profile.envVars.length} env vars · '
-            'updated ${_formatTimestamp(profile.updatedAt)}',
+            l10n.cardSummary(
+              profile.hostsEntries.length,
+              profile.envVars.length,
+              _formatTimestamp(profile.updatedAt),
+            ),
             style: AppTypography.caption,
           ),
         ),
@@ -99,22 +103,22 @@ class EnvProfileCard extends StatelessWidget {
               onPressed: isActive || isSwitching || onActivate == null
                   ? null
                   : onActivate,
-              child: Text(isActive ? 'Active' : 'Activate'),
+              child: Text(isActive ? l10n.actionActive : l10n.actionActivate),
             ),
             PopupMenuButton<EnvProfileCardAction>(
               itemBuilder: (_) => [
                 if (isActive)
-                  const PopupMenuItem<EnvProfileCardAction>(
+                  PopupMenuItem<EnvProfileCardAction>(
                     value: EnvProfileCardAction.rollback,
-                    child: Text('Rollback'),
+                    child: Text(l10n.actionRollback),
                   ),
-                const PopupMenuItem<EnvProfileCardAction>(
+                PopupMenuItem<EnvProfileCardAction>(
                   value: EnvProfileCardAction.edit,
-                  child: Text('Edit'),
+                  child: Text(l10n.actionEdit),
                 ),
-                const PopupMenuItem<EnvProfileCardAction>(
+                PopupMenuItem<EnvProfileCardAction>(
                   value: EnvProfileCardAction.delete,
-                  child: Text('Delete'),
+                  child: Text(l10n.actionDelete),
                 ),
               ],
               onSelected: (action) {
