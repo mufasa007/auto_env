@@ -2,6 +2,8 @@ import Cocoa
 import FlutterMacOS
 
 class MainFlutterWindow: NSWindow {
+  private var privilegedShell: PrivilegedShell?
+
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
     let windowFrame = self.frame
@@ -10,6 +12,14 @@ class MainFlutterWindow: NSWindow {
 
     RegisterGeneratedPlugins(registry: flutterViewController)
 
+    let shell = PrivilegedShell()
+    shell.register(with: flutterViewController.engine.binaryMessenger)
+    privilegedShell = shell
+
     super.awakeFromNib()
+  }
+
+  deinit {
+    privilegedShell?.dispose()
   }
 }

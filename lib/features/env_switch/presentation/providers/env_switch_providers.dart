@@ -2,6 +2,9 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/process/elevation_strategy.dart';
+import '../../../../core/process/macos_privileged_shell_strategy.dart';
+import '../../../../core/process/osascript_strategy.dart';
 import '../../../../core/process/process_runner.dart';
 import '../../../env_profile/presentation/providers/env_profile_providers.dart';
 import '../../data/repositories/active_profile_json_repository.dart';
@@ -39,6 +42,27 @@ final windowsHelperExePathProvider = Provider<String>((_) {
   return '$exeDir${Platform.pathSeparator}auto_env_helper.exe';
 });
 
+/// macOS-only elevation strategy. Resolved once per app session: prefers the
+/// Authorization Services method channel (Touch ID cached for the session),
+/// falls back to `osascript with administrator privileges` (prompts each time)
+/// if the Swift host is not available — e.g. someone is running the dart side
+/// outside the bundled .app, or a future macOS finally removes the
+/// `AuthorizationExecuteWithPrivileges` C symbol.
+final elevationStrategyProvider = FutureProvider<ElevationStrategy>((ref) async {
+  if (!Platform.isMacOS) {
+    throw StateError(
+      'elevationStrategyProvider is macOS-only; '
+      'Windows / Linux callers should not read it.',
+    );
+  }
+  final runner = ref.watch(processRunnerProvider);
+  final privileged = MacosPrivilegedShellStrategy();
+  if (await privileged.capabilityCheck()) {
+    return privileged;
+  }
+  return OsascriptStrategy(processRunner: runner);
+});
+
 final hostsWriterProvider = FutureProvider<HostsWriter>((ref) async {
   final runner = ref.watch(processRunnerProvider);
   final hostsPath = ref.watch(hostsFilePathProvider).resolve();
@@ -50,9 +74,10 @@ final hostsWriterProvider = FutureProvider<HostsWriter>((ref) async {
       processRunner: runner,
     );
   }
+  final elevation = await ref.watch(elevationStrategyProvider.future);
   return MacosHostsWriter(
     hostsFilePath: hostsPath,
-    processRunner: runner,
+    elevation: elevation,
   );
 });
 

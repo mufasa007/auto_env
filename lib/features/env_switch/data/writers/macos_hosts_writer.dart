@@ -1,23 +1,25 @@
 import 'dart:io';
 
-import '../../../../core/process/process_runner.dart';
+import '../../../../core/process/elevation_strategy.dart';
 import '../../domain/entities/hosts_managed_block.dart';
 import '../../domain/exceptions.dart';
 import 'hosts_writer.dart';
 
 /// Writes /etc/hosts on macOS by staging the new content in a temp file and
-/// asking osascript to copy it into place with administrator privileges.
-/// The same osascript invocation also flushes the DNS cache so the user
-/// only sees one Touch ID / password prompt per switch.
+/// asking the configured [ElevationStrategy] to copy it into place with
+/// administrator privileges. The same elevated shell invocation also flushes
+/// the DNS cache so the user only sees one Touch ID / password prompt per
+/// switch (or zero prompts after the first one in a session, when the
+/// strategy is `MacosPrivilegedShellStrategy`).
 class MacosHostsWriter implements HostsWriter {
   MacosHostsWriter({
     required this.hostsFilePath,
-    required this.processRunner,
+    required this.elevation,
     String? tempDirPath,
   }) : tempDirPath = tempDirPath ?? Directory.systemTemp.path;
 
   final String hostsFilePath;
-  final ProcessRunner processRunner;
+  final ElevationStrategy elevation;
   final String tempDirPath;
 
   @override
@@ -39,19 +41,17 @@ class MacosHostsWriter implements HostsWriter {
     await tmpFile.writeAsString(merged, flush: true);
 
     try {
-      final script = 'do shell script "'
-          'cp \\"${tmpFile.path}\\" \\"$hostsFilePath\\" && '
+      final script = 'cp "${tmpFile.path}" "$hostsFilePath" && '
           'dscacheutil -flushcache && '
-          'killall -HUP mDNSResponder'
-          '" with administrator privileges';
-      final result = await processRunner.run('osascript', ['-e', script]);
+          'killall -HUP mDNSResponder';
+      final result = await elevation.run('sh', ['-c', script]);
       if (result.exitCode != 0) {
         final stderr = '${result.stderr}';
         if (_isPrivilegeDenial(stderr)) {
           throw PrivilegeDeniedException(_describePrivilegeDenial(stderr));
         }
         throw HostsWriteFailedException(
-          'osascript exit ${result.exitCode}: $stderr',
+          'hosts write exit ${result.exitCode}: $stderr',
         );
       }
     } finally {

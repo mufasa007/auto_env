@@ -13,6 +13,10 @@ class PrivilegeDeniedException extends SwitchException {
   const PrivilegeDeniedException(super.message);
 }
 
+class AuthorizationRevokedException extends SwitchException {
+  const AuthorizationRevokedException(super.message);
+}
+
 class HostsWriteFailedException extends SwitchException {
   const HostsWriteFailedException(super.message);
 }
