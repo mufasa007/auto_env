@@ -30,13 +30,12 @@ auto_env 把这些动作收进一个 GUI：
 
 到 [Releases](../../releases/latest) 下载对应平台的产物：
 
-- **macOS**：`auto_env-x.y.z-macos.dmg`
-  双击挂载，拖 `auto_env.app` 到 Applications 即可。已 Developer ID 签名 + 公证，首次打开不会被 Gatekeeper 拦截。
 - **Windows**：`auto_env-x.y.z-windows-x64.zip`
   解压到任意目录，双击 `auto_env.exe` 启动。**首次启动会被 SmartScreen 拦一下**（"Windows protected your PC"），点 **更多信息 → 仍要运行** 即可——这是因为目前还没有 Windows 代码签名证书，不是病毒。
   Windows 版是绿色包：所有数据都在 `%APPDATA%\top.linkee\auto_env\`，删除解压目录即可"卸载"（要彻底清干净顺手把 `%APPDATA%` 下那个目录也删掉）。
+- **macOS**：暂未提供二进制下载。代码已就绪，但还在等 Developer ID Application 证书 + 公证流程上线（详见 [docs/RELEASE.md](docs/RELEASE.md)）。在此之前可以走下方「从源码运行」自行编译。
 
-> Linux 暂未提供下载——hosts/env writers 尚未在 Linux 上实现，发了也用不了。详见 [Roadmap](#四roadmap)。
+> Linux 也暂未提供下载——hosts/env writers 尚未在 Linux 上实现，发了也用不了。详见 [Roadmap](#四roadmap)。
 
 ### 从源码运行（开发者）
 
@@ -109,7 +108,7 @@ GUI 应用（Finder/Spotlight 启动的）通过 `launchctl setenv` 立刻可见
 - **M1** — Profile CRUD + 本地 JSON 持久化（Repository + Riverpod + 列表/编辑页）
 - **M2** — 切换执行（hosts 管理块 / env vars 双平台写入 / 进度对话框 / 回滚）
 - **M2.5** — Raycast 风格暗色主题与设计 token 统一；macOS Touch ID 单进程缓存
-- **工程基建** — GitHub Actions 自动构建发版：macOS 签名 + 公证 `.dmg`、Windows 绿色 `.zip`，push `v*.*.*` tag 即触发（[流程](docs/RELEASE.md)）
+- **工程基建** — GitHub Actions 自动构建 Windows 绿色 `.zip`（push `v*.*.*` tag 触发，[流程](docs/RELEASE.md)）；macOS 签名公证流水线已写好待证书就位
 
 接下来的方向（按优先级排序，欢迎反馈）：
 
